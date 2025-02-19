@@ -78,6 +78,10 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                 Button(
                     enabled = !connectedState.value,
                     onClick = {
+                        /**
+                         * After discovering a device, call `connect` to establish a connection.
+                         * This is required for subsequent data read and write operations.
+                         */
                         val connect = device?.connect(this@DetailActivity)
                     }) {
                     Text("connect")
@@ -98,6 +102,10 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                     Slider(value = this@DetailActivity.volumeState.value,
                         onValueChange = {
                             volumeState.value = it
+                            /**
+                             * Sets the device's volume level.
+                             * Once the volume is set, the updated value can be retrieved in the `deviceDidUpdateValue` callback.
+                             */
                             device?.excute(JinHaoRequest.controlVolume(it.roundToInt(), programState.value.roundToInt()), Consumer {
                                 
                             })},
@@ -114,6 +122,16 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                     Slider(value = this@DetailActivity.programState.value,
                         onValueChange = { program ->
                             programState.value = program
+                            /**
+                             * Sets the Program mode for the hearing device.
+                             * The program mode determines how the device processes sound based on different listening environments.
+                             *
+                             * Available Program modes:
+                             * - 0: Normal       → Standard mode for everyday listening.
+                             * - 1: Music        → Optimized for richer sound quality when listening to music.
+                             * - 2: Outdoor      → Reduces wind noise and enhances speech clarity in outdoor environments.
+                             * - 3: Restaurant   → Focuses on speech and reduces background noise in noisy environments.
+                             */
                             device?.excute(JinHaoRequest.controlProgram(program.roundToInt()), Consumer { result ->
                                 if (result.isSuccess && device != null) {
 
@@ -132,6 +150,17 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                     Slider(value = this@DetailActivity.noiseState.value,
                         onValueChange = {
                             noiseState.value = it
+                            /**
+                             * Sets the noise reduction mode for the hearing device.
+                             * The process involves retrieving the device's DSP, modifying the NOISE mode,
+                             * and then writing the updated DSP data back to the device.
+                             *
+                             * Available noise reduction levels:
+                             * - OFF: Noise reduction disabled
+                             * - WEAK: Low-level noise reduction
+                             * - MEDIUM: Medium-level noise reduction
+                             * - STRONG: High-level noise reduction
+                             */
                             val dsp = device?.dsp?.copy()
                             when {
                                 it.roundToInt() == 0 -> {
@@ -166,6 +195,17 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                     Slider(value = this@DetailActivity.mpoState.value,
                         onValueChange = {
                             mpoState.value = it
+                            /**
+                             * Sets the Maximum Power Output (MPO) mode for the hearing device.
+                             * The process involves retrieving the device's DSP, modifying the MPO mode,
+                             * and then writing the updated DSP data back to the device.
+                             *
+                             * Available MPO levels:
+                             * - OFF: MPO disabled (no output limitation)
+                             * - LOW: Low-level output limitation
+                             * - MEDIUM: Medium-level output limitation
+                             * - HIGH: High-level output limitation
+                             */
                             val dsp = device?.dsp?.copy()
                             when {
                                 it.roundToInt() == 0 -> {
@@ -200,6 +240,16 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                     Slider(value = this@DetailActivity.directionState.value,
                         onValueChange = {
                             directionState.value = it
+                            /**
+                             * Sets the direction mode for the hearing device.
+                             * The directional mode adjusts how the device captures sound based on the current listening environment.
+                             *
+                             * Available Directional modes:
+                             * - NORMAL:   Standard microphone direction, capturing sound equally from all directions.
+                             * - TV:       Optimized for listening to television, focusing on sound from the front.
+                             * - MEETING:  Optimized for group settings, enhancing voices from the front while reducing noise.
+                             * - FACE:     Focused on capturing sound from a specific person or a face-to-face conversation.
+                             */
                             val dsp = device?.dsp?.copy()
                             when {
                                 it.roundToInt() == 0 -> {
@@ -253,11 +303,17 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
     /**
      *  *********************************** JinHaoAccessoryListener ********************************
      */
+
+    /**
+     * Callback triggered when the device's state changes.
+     */
     override fun deviceDidUpdate(device: Accessory?, state: Int) {
 
     }
 
-    //当助听器连接成功
+    /**
+     *  Callback when the device successfully connects
+     */
     override fun deviceDidConnect(device: Accessory?) {
         runOnUiThread {
             connectedState.value = true
@@ -265,7 +321,9 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
         }
     }
 
-    //当助听器断开连接
+    /**
+     *  Callback when the device disconnects
+     */
     override fun deviceDidDisconnect(device: Accessory?) {
         runOnUiThread {
             connectedState.value = false
@@ -273,7 +331,9 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
         }
     }
 
-    //当助听器连接失败
+    /**
+     * Callback when the device fails to connect
+     */
     override fun deviceDidFailToConnect(device: Accessory?, errorCode: Int) {
         runOnUiThread {
             connectedState.value = false
@@ -281,34 +341,49 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
         }
     }
 
+    /**
+     * This callback is called when the device has discovered its services.
+     * At this point, you can retrieve device information such as the current Program, Volume,
+     * or DSP data for each Program.
+     */
     override fun deviceDidDiscoverServices(device: Accessory?, services: MutableList<AccessoryService>?) {
         if (device is JinHaoAccessory) {
             device.excute(JinHaoRequest.readProgramVolume(), Consumer {
                 if (it.isError) {
-                    Log.w(tag, "读取模式失败")
+                    Log.w(tag, "Failed to read program volume")
                 } else {
-                    Log.w(tag, "读取模式成功")
+                    Log.w(tag, "Successfully read program volume")
                 }
             })
             device.excute(JinHaoRequest.readDsp(0), Consumer {
-                Log.w(tag, "读取模式1文件完成")
+                Log.w(tag, "Finished reading program 0 DSP file")
             })
             device.excute(JinHaoRequest.readDsp(1), Consumer {
-                Log.w(tag, "读取模式2文件完成")
+                Log.w(tag, "Finished reading program 1 DSP file")
             })
             device.excute(JinHaoRequest.readDsp(2), Consumer {
-                Log.w(tag, "读取模式3文件完成")
+                Log.w(tag, "Finished reading program 2 DSP file")
             })
             device.excute(JinHaoRequest.readDsp(3), Consumer {
-                Log.w(tag, "读取模式4文件完成")
+                Log.w(tag, "Finished reading program 3 DSP file")
             })
         }
     }
 
+    /**
+     * Callback triggered when the device's battery level changes.
+     */
     override fun deviceBatteryChanged(device: JinHaoAccessory?, bat: Int) {
 
     }
 
+    /**
+     * This callback is called when the device's data value is updated,
+     * such as when data changes or when data is read from the device.
+     * You can access the current device data values in this method.
+     * To retrieve the corresponding values from the device, you need to first issue a read command,
+     * as shown in the `deviceDidDiscoverServices` method where `device.excute` performs a read operation.
+     */
     override fun deviceDidUpdateValue(device: JinHaoAccessory?) {
         runOnUiThread {
             if (device is JinHaoAccessory) {
@@ -367,13 +442,17 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
         }
     }
 
-    //助听器上的调节模式
+    /**
+     * Changing the program mode on the hearing aid
+     */
     override fun didChangedProgramByAid(device: JinHaoAccessory?, previous: Int, current: Int) {
         programState.value = current.toFloat()
         device?.excute(JinHaoRequest.readDsp(current), null)
     }
 
-    //助听器上的调节音量
+    /**
+     * Changing the volume on the hearing aid
+     */
     override fun didChangedVolumeByAid(device: JinHaoAccessory?, previous: Int, current: Int) {
         volumeState.value = current.toFloat()
     }

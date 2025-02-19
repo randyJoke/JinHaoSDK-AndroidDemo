@@ -44,12 +44,21 @@ import com.jinhao.jinhaosdk.shared.utils.BluetoothPermissionHelper
 import com.jinhao.jinhaosdk_androiddemo.ui.theme.JinHaoSDKAndroidDemoTheme
 class MainActivity : ComponentActivity(), AccessoryManagerScanningListener {
 
+    /**
+     * A complete hearing aid system consists of both a left and a right ear device.
+     * Each `JinHaoAccessory` object represents either the left or right ear device,
+     * which can be identified using `JinHaoOrientation`.
+     */
     private var accessorys = mutableStateListOf<JinHaoAccessory>()
 
     private var loadingState = mutableStateOf<Boolean>(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        /**
+         * Creates an `AccessoryManager` instance and sets a scan listener
+         * by calling `setScanningListener` to handle scan events.
+         */
         DataHolder.accessoryManager = AccessoryManager(this);
         DataHolder.accessoryManager?.setScanningListener(this);
 
@@ -82,6 +91,11 @@ class MainActivity : ComponentActivity(), AccessoryManagerScanningListener {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
         if (requestCode === BluetoothPermissionHelper.REQUEST_CODE_BLUETOOTH) {
+            /**
+             * Checks whether the user has granted the required Bluetooth permissions.
+             * If the permissions are denied, device scanning, connection, and operations
+             * will not be possible.
+             */
             val permissionsGranted = BluetoothPermissionHelper.handlePermissionsResult(
                 requestCode, permissions, grantResults
             )
@@ -97,10 +111,18 @@ class MainActivity : ComponentActivity(), AccessoryManagerScanningListener {
         }
     }
 
+    /**
+     * Callback from `AccessoryManagerScanningListener` to monitor changes
+     * in the current scanning state.
+     */
     override fun accessoryManagerIsScanning(manager: AccessoryManager?, isScanning: Boolean) {
         loadingState.value = isScanning;
     }
 
+    /**
+     * Callback from `AccessoryManagerScanningListener` triggered when
+     * a new device is discovered during scanning.
+     */
     override fun accessoryManagerDidDiscover(
         manager: AccessoryManager?,
         device: Accessory?,
@@ -112,6 +134,10 @@ class MainActivity : ComponentActivity(), AccessoryManagerScanningListener {
         }
     }
 
+    /**
+     * Callback from `AccessoryManagerScanningListener` triggered
+     * when an already discovered device's information is updated.
+     */
     override fun accessoryManagerDidUpdate(
         manager: AccessoryManager?,
         device: Accessory?,
@@ -137,7 +163,12 @@ class MainActivity : ComponentActivity(), AccessoryManagerScanningListener {
                     actions = {
                         IconButton(
                             onClick = {
-                                //检查蓝牙权限
+                                /**
+                                 * Before starting a device scan, you must request the necessary Bluetooth permissions.
+                                 * Once permissions are granted, call `startScan` to repeatedly scan for devices.
+                                 * The `duration` parameter in `startScan` specifies the scan duration in seconds,
+                                 * where `-1` means continuous scanning without a time limit.
+                                 */
                                 if (BluetoothPermissionHelper.checkAndRequestBluetoothPermissions(this@MainActivity)){
                                     accessorys.clear()
                                     DataHolder.accessoryManager?.clearAccessories()
