@@ -1,7 +1,6 @@
 package com.jinhao.jinhaosdk_androiddemo
 
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -12,8 +11,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Slider
@@ -23,7 +25,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.jinhao.jinhaosdk.aid.jinhao.JinHaoAccessory
 import com.jinhao.jinhaosdk.aid.jinhao.JinHaoAccessoryListener
 import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoDsp
@@ -51,6 +55,10 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
 
     private var directionState = mutableStateOf<Float>(-1F)
 
+    private val frequencies = listOf(250, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000, 6000, 7000)
+
+    private var eqState = frequencies.associateWith { mutableStateOf(0f) }
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val itemId = intent.getStringExtra("address") // 获取传递的数据
@@ -176,7 +184,7 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                                     dsp?.noise = JinHaoDsp.NOISE.STRONG
                                 }
                             }
-                            dsp.let {
+                            dsp?.let {
                                 device?.excute(JinHaoRequest.writeDsp(it, programState.value.roundToInt(), true), Consumer {
 
                                 })
@@ -221,7 +229,7 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                                     dsp?.mpo = JinHaoDsp.MPO.HIGH
                                 }
                             }
-                            dsp.let {
+                            dsp?.let {
                                 device?.excute(JinHaoRequest.writeDsp(it, programState.value.roundToInt(), true), Consumer {
 
                                 })
@@ -265,7 +273,7 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                                     dsp?.direction = JinHaoDsp.DIRECTION.FACE
                                 }
                             }
-                            dsp.let {
+                            dsp?.let {
                                 device?.excute(JinHaoRequest.writeDsp(it, programState.value.roundToInt(), true), Consumer {
 
                                 })
@@ -275,9 +283,73 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                         steps = 2
                     )
                 }
+
+                EqSliderUI()
             }
         }
     }
+
+    @Composable
+    fun EqSliderUI() {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(text = "EQ Settings", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                items(frequencies) { frequency ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(text = "${frequency}Hz")
+
+                        Slider(
+                            value = eqState[frequency]?.value ?: 0f,
+                            onValueChange = {
+                                eqState[frequency]?.value = it
+                                /**
+                                 * Adjusts the EQ (Equalizer) values for different frequency bands.
+                                 * The frequencies are as follows: 250Hz, 500Hz, 1000Hz, 1500Hz, 2000Hz, 2500Hz, 3000Hz, 3500Hz, 4000Hz, 5000Hz, 6000Hz, and 7000Hz.
+                                 * For each frequency, the EQ values range from 0 to 15.
+                                 * These values are stored as bytes (0 to 15) for the DSP (Digital Signal Processor) settings.
+                                 */
+                                val dsp = device?.dsp?.copy()
+                                when (frequency) {
+                                    250 -> dsp?.eq250 = it.toInt().toByte()
+                                    500 -> dsp?.eq500 = it.toInt().toByte()
+                                    1000 -> dsp?.eq1000 = it.toInt().toByte()
+                                    1500 -> dsp?.eq1500 = it.toInt().toByte()
+                                    2000 -> dsp?.eq2000 = it.toInt().toByte()
+                                    2500 -> dsp?.eq2500 = it.toInt().toByte()
+                                    3000 -> dsp?.eq3000 = it.toInt().toByte()
+                                    3500 -> dsp?.eq3500 = it.toInt().toByte()
+                                    4000 -> dsp?.eq4000 = it.toInt().toByte()
+                                    5000 -> dsp?.eq5000 = it.toInt().toByte()
+                                    6000 -> dsp?.eq6000 = it.toInt().toByte()
+                                    7000 -> dsp?.eq7000 = it.toInt().toByte()
+                                }
+                                dsp?.let {
+                                    device?.excute(JinHaoRequest.writeDsp(it, programState.value.roundToInt(), true), Consumer {
+
+                                    })
+                                }
+                            },
+                            valueRange = 0f..15f,
+                            steps = 14,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        Text(text = "${eqState[frequency]?.value?.toInt()}")
+                    }
+                }
+            }
+        }
+    }
+
 
     @Composable
     fun GlobalLoading(isLoading: Boolean, content: @Composable () -> Unit) {
@@ -417,20 +489,18 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                         }
                     }
 
-                    when {
-                        it.mpo == JinHaoDsp.MPO.OFF -> {
-                            mpoState.value = 0F
-                        }
-                        it.mpo == JinHaoDsp.MPO.LOW -> {
-                            mpoState.value = 1F
-                        }
-                        it.mpo == JinHaoDsp.MPO.MEDIUM -> {
-                            mpoState.value = 2F
-                        }
-                        it.mpo == JinHaoDsp.MPO.HIGH -> {
-                            mpoState.value = 3F
-                        }
-                    }
+                    eqState[250]?.value = it.eq250.toFloat()
+                    eqState[500]?.value = it.eq500.toFloat()
+                    eqState[1000]?.value = it.eq1000.toFloat()
+                    eqState[1500]?.value = it.eq1500.toFloat()
+                    eqState[2000]?.value = it.eq2000.toFloat()
+                    eqState[2500]?.value = it.eq2500.toFloat()
+                    eqState[3000]?.value = it.eq3000.toFloat()
+                    eqState[3500]?.value = it.eq3500.toFloat()
+                    eqState[4000]?.value = it.eq4000.toFloat()
+                    eqState[5000]?.value = it.eq5000.toFloat()
+                    eqState[6000]?.value = it.eq6000.toFloat()
+                    eqState[7000]?.value = it.eq7000.toFloat()
                 }
                 device.let {
                     volumeState.value = it.volume.toFloat()
