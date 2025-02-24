@@ -41,7 +41,10 @@ import com.jinhao.jinhaosdk.shared.accessory.Accessory
 import com.jinhao.jinhaosdk.shared.accessory.AccessoryManager
 import com.jinhao.jinhaosdk.shared.accessory.AccessoryManagerScanningListener
 import com.jinhao.jinhaosdk.shared.utils.BluetoothPermissionHelper
+import com.jinhao.jinhaosdk.shared.utils.JinHaoLog
 import com.jinhao.jinhaosdk_androiddemo.ui.theme.JinHaoSDKAndroidDemoTheme
+import kotlin.math.log
+
 class MainActivity : ComponentActivity(), AccessoryManagerScanningListener {
 
     /**
@@ -62,6 +65,8 @@ class MainActivity : ComponentActivity(), AccessoryManagerScanningListener {
         DataHolder.accessoryManager = AccessoryManager(this);
         DataHolder.accessoryManager?.setScanningListener(this);
 
+        JinHaoLog.isPrint = false;
+        Log.e("TAG", "sdk version is : ${JinHaoLog.sdkVersion()}" );
         setContent {
             MyApp()
         }
