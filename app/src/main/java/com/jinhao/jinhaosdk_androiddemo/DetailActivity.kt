@@ -427,17 +427,33 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                     Log.w(tag, "Successfully read program volume")
                 }
             })
+
+            //You can access the total number of programs in the hearing aid, but no more than four.
+            device.excute(JinHaoRequest.readNumberOfProgram(device.hearChip), Consumer {
+                if (it.isError) {
+                    Log.w(tag, "Failed to read number of program")
+                } else {
+                    Log.w(tag, "Successfully read number of program is ${device.numberOfProgram}")
+                }
+            })
+
+            //ou can obtain the scene mode corresponding to each program, for example, the scene mode of program 0 is scenesOfProgram[0]
+            device.excute(JinHaoRequest.readScenesOfProgram(), Consumer {
+                val programs = device.scenesOfProgram    //JinHaoProgram
+                Log.w(tag, "Successfully read scenes of program is ${programs.size}, current scene is ${device.scenesOfProgram.get(device.numberOfProgram)}")
+            })
+
             device.excute(JinHaoRequest.readDsp(0), Consumer {
-                Log.w(tag, "Finished reading program 0 DSP file")
+                Log.w(tag, "Finished reading program 0 DSP file, current scene is ${device.scenesOfProgram.get(0)}")
             })
             device.excute(JinHaoRequest.readDsp(1), Consumer {
-                Log.w(tag, "Finished reading program 1 DSP file")
+                Log.w(tag, "Finished reading program 1 DSP file, current scene is ${device.scenesOfProgram.get(1)}")
             })
             device.excute(JinHaoRequest.readDsp(2), Consumer {
-                Log.w(tag, "Finished reading program 2 DSP file")
+                Log.w(tag, "Finished reading program 2 DSP file, current scene is ${device.scenesOfProgram.get(2)}")
             })
             device.excute(JinHaoRequest.readDsp(3), Consumer {
-                Log.w(tag, "Finished reading program 3 DSP file")
+                Log.w(tag, "Finished reading program 3 DSP file, current scene is ${device.scenesOfProgram.get(3)}")
             })
         }
     }
