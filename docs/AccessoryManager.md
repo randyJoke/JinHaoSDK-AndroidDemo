@@ -1,0 +1,19 @@
+# AccessoryManager 
+
+The `AccessoryManager` class is responsible for managing Bluetooth Low Energy (BLE) connections and scanning for nearby accessories. It supports starting and stopping scans, managing Bluetooth state, and notifying listeners about scanning results and Bluetooth status changes.
+
+| **Attribute/Method**                                               | **Description**                                                                                                                                         |
+|--------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **`AccessoryManager(Context context)`**                             | Constructor that initializes the Bluetooth manager and adapter, and registers the broadcast receiver for Bluetooth state changes.                        |
+| **`getContext()`**                                                 | Retrieves the context object.                                                                                                                            |
+| **`isSupportBle()`**                                               | Checks if the device supports Bluetooth Low Energy (BLE).                                                                                               |
+| **`enableBluetooth()`**                                            | Enables Bluetooth functionality on the device.                                                                                                          |
+| **`disableBluetooth()`**                                           | Disables Bluetooth functionality on the device.                                                                                                         |
+| **`isBlueEnable()`**                                               | Checks if Bluetooth is currently enabled on the device.                                                                                                 |
+| **`setStatusListener(AccessoryManagerStatusListener listener)`**    | Sets a listener for Bluetooth status changes (enabled/disabled), More details can be found in [AccessoryManagerStatusListener](AccessoryManagerStatusListener.md)                                                                                       |
+| **`setScanningListener(AccessoryManagerScanningListener listener)`** | Sets a listener for scanning results and updates.  More details can be found in [AccessoryManagerScanningListener](AccessoryManagerScanningListener.md)                                                                                                      |
+| **`isScanning()`**                                                    | A flag indicating whether Bluetooth scanning is currently in progress.                                                                                 |
+| **`startScan()`**                                                  | Starts scanning for nearby Bluetooth accessories.                                                                                                       |
+| **`startScan(int duration)`**                                      | Starts scanning for Bluetooth accessories for a specified duration.                                                                                     |
+| **`stopScan()`**                                                   | Stops the current scan for Bluetooth accessories.                                                                                                       |
+| **`clearAccessories()`**                                            | Clears the list of discovered accessories.                                                                                                              |

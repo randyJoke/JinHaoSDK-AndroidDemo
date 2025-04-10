@@ -25,12 +25,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontWeight;
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jinhao.jinhaosdk.aid.jinhao.JinHaoAccessory
 import com.jinhao.jinhaosdk.aid.jinhao.JinHaoAccessoryListener
 import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoDsp
+import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoProfile
+import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoProfileType
 import com.jinhao.jinhaosdk.aid.jinhao.service.JinHaoRequest
 import com.jinhao.jinhaosdk.shared.accessory.Accessory
 import com.jinhao.jinhaosdk.shared.accessory.AccessoryService
@@ -58,10 +60,14 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
     private val frequencies = listOf(250, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000, 6000, 7000)
 
     private var eqState = frequencies.associateWith { mutableStateOf(0f) }
-    
+
+    private var minEQValueState = mutableStateOf<Float>(value = 0f)
+
+    private var maxEQValueState = mutableStateOf<Float>(value = 15f)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val itemId = intent.getStringExtra("address") // 获取传递的数据
+        val itemId = intent.getStringExtra("address")
         device = DataHolder.accessoryManager?.deviceForDeviceId(itemId) as JinHaoAccessory
         configureUI()
     }
@@ -79,8 +85,8 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp), // 子项间距
-                horizontalAlignment = Alignment.CenterHorizontally // 水平对齐方式
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(text = "${device?.deviceName}")
                 Button(
@@ -131,18 +137,13 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                         onValueChange = { program ->
                             programState.value = program
                             /**
-                             * Sets the Program mode for the hearing device.
-                             * The program mode determines how the device processes sound based on different listening environments.
+                             * Sets the Program for the hearing device.
+                             * The program determines how the device processes sound based on different listening environments.
                              *
-                             * Available Program modes:
-                             * - 0: Normal       → Standard mode for everyday listening.
-                             * - 1: Music        → Optimized for richer sound quality when listening to music.
-                             * - 2: Outdoor      → Reduces wind noise and enhances speech clarity in outdoor environments.
-                             * - 3: Restaurant   → Focuses on speech and reduces background noise in noisy environments.
                              */
                             device?.excute(JinHaoRequest.controlProgram(program.roundToInt()), Consumer { result ->
                                 if (result.isSuccess && device != null) {
-
+                                    Log.w(tag, "current program is ${program}, current scene mode is ${device!!.scenesOfProgram.get(device!!.program)}")
                                 }
                             })},
                         valueRange = 0f..3f,
@@ -231,7 +232,9 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                             }
                             dsp?.let {
                                 device?.excute(JinHaoRequest.writeDsp(it, programState.value.roundToInt(), true), Consumer {
+                                    if (it.isSuccess) {
 
+                                    }
                                 })
                             }
                         },
@@ -338,8 +341,8 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                                     })
                                 }
                             },
-                            valueRange = 0f..15f,
-                            steps = 14,
+                            valueRange = minEQValueState.value..maxEQValueState.value,
+                            steps = (maxEQValueState.value-1).toInt(),
                             modifier = Modifier.weight(1f)
                         )
 
@@ -354,12 +357,11 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
     @Composable
     fun GlobalLoading(isLoading: Boolean, content: @Composable () -> Unit) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // 全局菊花加载进度条
             if (isLoading) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.3f)), // 半透明背景
+                        .background(Color.Black.copy(alpha = 0.3f)),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(
@@ -428,32 +430,62 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                 }
             })
 
-            //You can access the total number of programs in the hearing aid, but no more than four.
+            //We can access the total number of programs in the hearing aid, but no more than four.
             device.excute(JinHaoRequest.readNumberOfProgram(device.hearChip), Consumer {
                 if (it.isError) {
                     Log.w(tag, "Failed to read number of program")
+
+                    var numberOfPragram = device.numberOfProgram
+                    device.excute(JinHaoRequest.readDsp(0), Consumer {
+                        Log.w(tag, "Finished reading program 0 DSP file, scene is ${device.scenesOfProgram.get(0)}")
+                    })
+                    device.excute(JinHaoRequest.readDsp(numberOfPragram-1), Consumer {
+                        Log.w(tag, "Finished reading program lastest DSP file, scene is ${device.scenesOfProgram.get(numberOfPragram-1)}")
+                    })
+
                 } else {
                     Log.w(tag, "Successfully read number of program is ${device.numberOfProgram}")
                 }
             })
 
-            //ou can obtain the scene mode corresponding to each program, for example, the scene mode of program 0 is scenesOfProgram[0]
+            //We can obtain the scene mode corresponding to each program, for example, the scene mode of program 0 is scenesOfProgram[0]
             device.excute(JinHaoRequest.readScenesOfProgram(), Consumer {
                 val programs = device.scenesOfProgram    //JinHaoProgram
                 Log.w(tag, "Successfully read scenes of program is ${programs.size}, current scene is ${device.scenesOfProgram.get(device.numberOfProgram)}")
             })
 
-            device.excute(JinHaoRequest.readDsp(0), Consumer {
-                Log.w(tag, "Finished reading program 0 DSP file, current scene is ${device.scenesOfProgram.get(0)}")
+            //read battery
+            device.excute(JinHaoRequest.readBat(), Consumer {
+                if (it.isError) {
+                    Log.w(tag, "Failed to read battery")
+                } else {
+                    Log.w(tag, "Successfully read battery ${device.bat}")
+                }
             })
-            device.excute(JinHaoRequest.readDsp(1), Consumer {
-                Log.w(tag, "Finished reading program 1 DSP file, current scene is ${device.scenesOfProgram.get(1)}")
+
+            //read current program and volume
+            device.excute(JinHaoRequest.readProgramVolume(), Consumer {
+                if (it.isError) {
+                    Log.w(tag, "Failed to read program and volume")
+                } else {
+                    Log.w(tag, "Successfully read current program ${device.program}, volume is ${device.volume}")
+                    device.excute(JinHaoRequest.readDsp(device.program), Consumer {
+                        Log.w(tag, "current dsp for program ${device.program} is ${device.dsp}")
+                    })
+                }
             })
-            device.excute(JinHaoRequest.readDsp(2), Consumer {
-                Log.w(tag, "Finished reading program 2 DSP file, current scene is ${device.scenesOfProgram.get(2)}")
+
+            //read sku for hearing aid
+            device.excute(JinHaoRequest.readProfile(JinHaoProfileType.PRODUCT_SKU), Consumer {
+                if (it.isSuccess) {
+                    Log.w(tag, "sku code is ${device.profile.skuCode}")
+                }
             })
-            device.excute(JinHaoRequest.readDsp(3), Consumer {
-                Log.w(tag, "Finished reading program 3 DSP file, current scene is ${device.scenesOfProgram.get(3)}")
+            //read pattern for hearing aid
+            device.excute(JinHaoRequest.readProfile(JinHaoProfileType.PRODUCT_PATTERN), Consumer {
+                if (it.isSuccess) {
+                    Log.w(tag, "pattern code is ${device.profile.patternCode}")
+                }
             })
         }
     }
@@ -504,7 +536,7 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                             directionState.value = 3F
                         }
                     }
-
+                    //range of value is dsp.minEqValue to dsp.maxEqValue
                     eqState[250]?.value = it.eq250.toFloat()
                     eqState[500]?.value = it.eq500.toFloat()
                     eqState[1000]?.value = it.eq1000.toFloat()
@@ -533,7 +565,11 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
      */
     override fun didChangedProgramByAid(device: JinHaoAccessory?, previous: Int, current: Int) {
         programState.value = current.toFloat()
-        device?.excute(JinHaoRequest.readDsp(current), null)
+        device?.excute(JinHaoRequest.readDsp(current), Consumer {
+            if (it.isSuccess) {
+
+            }
+        })
     }
 
     /**
@@ -541,6 +577,10 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
      */
     override fun didChangedVolumeByAid(device: JinHaoAccessory?, previous: Int, current: Int) {
         volumeState.value = current.toFloat()
+        device?.dsp?.let {
+            minEQValueState.value = it.minEqValue.toFloat()
+            maxEQValueState.value = it.maxEqValue.toFloat()
+        }
     }
 
 }
