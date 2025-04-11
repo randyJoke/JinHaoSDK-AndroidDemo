@@ -23,7 +23,7 @@ The JinHaoRequest class encapsulates requests for communication with JinHao hear
 ## Control Requests
 | Method | Parameters | Description |
 | ---------------- | ----------- | ----------- |
-| `static JinHaoRequest controlVolume(int volume, int program)` | `volume`: The volume level to set. The `volume` can be set in two ranges: <br>**Range 1:** `volume` from **0 to 10** representing a total of 10 volume levels. <br>**Range 2:** `volume` from **0 to 5**, representing a total of 6 volume levels.<br> `program`: The program number to control the volume for. the range is `0`~ `accessory.numberOfProgram - 1`| Creates a request to control the volume for the specified program. |
+| `static JinHaoRequest controlVolume(int volume, int program)` | `volume`: The volume adjustment range typically spans from the minimum value ([accessory.profile.getMinVolume()](JinHaoProfile.md#jinhaoprofile)) to the maximum value ([accessory.profile.getMaxVolume()](JinHaoProfile.md#jinhaoprofile))<br> `program`: The program number to control the volume for. the range is `0`~ `accessory.numberOfProgram - 1`| Creates a request to control the volume for the specified program. |
 | `static JinHaoRequest controlProgram(int program)` | `program`: The program number to control.  the range is `0`~ `accessory.numberOfProgram - 1`| Creates a request to control the program. |
 | `static JinHaoRequest controlLockChip()` | None | Creates a request to lock the chip. |
 | `static JinHaoRequest controlMute(boolean mute)` | `mute`: Whether to mute or unmute. | Creates a request to control the mute setting. |

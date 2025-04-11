@@ -5,6 +5,7 @@ This guide will walk you through the steps to integrate the SDK into your Androi
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
+    - [Permissions](#permissions)
     - [Initialization](#initialization)
     - [Scan](#scan)
     - [Connect](#connect)
@@ -41,69 +42,129 @@ dependencies {
 
 ## Usage
 
+### Permissions
+Android requires additional permissions declared in the manifest for an app to run a BLE scan since API 23 (6.0 / Marshmallow) and perform a BLE connection since API 31 (Android 12). 
+```
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+```
+Before starting a device scan, we must request the necessary Bluetooth permissions by [BluetoothPermissionHelper](docs/BluetoothPermissionHelper.md). 
+```kotlin
+// Checking and requesting Bluetooth permissions
+BluetoothPermissionHelper.checkAndRequestBluetoothPermissions(this@MainActivity);
+
+// Handling permission request result
+override fun onRequestPermissionsResult(
+    requestCode: Int,
+    permissions: Array<out String>,
+    grantResults: IntArray
+) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+    if (requestCode === BluetoothPermissionHelper.REQUEST_CODE_BLUETOOTH) {
+        /**
+         * Checks whether the user has granted the required Bluetooth permissions.
+         * If the permissions are denied, device scanning, connection, and operations
+         * will not be possible.
+         */
+        val permissionsGranted = BluetoothPermissionHelper.handlePermissionsResult(
+            requestCode, permissions, grantResults
+        )
+        if (permissionsGranted) {
+            // Permissions granted, Bluetooth operations can now begin.
+            Toast.makeText(this, "Bluetooth permissions is ok", Toast.LENGTH_SHORT)
+                .show()
+        } else {
+            // Permissions not granted, please prompt the user.
+            Toast.makeText(this, "Bluetooth permissions are required", Toast.LENGTH_SHORT)
+                .show()
+        }
+    }
+}
+```
+
 ### Initialization
 First, we need to create an instance of [AccessoryManager](AccessoryManager.md#accessorymanager-class) and assign the appropriate delegates. This will enable the app to manage Bluetooth accessory scanning and track its status.
-```
-import JinHaoSDK
-```
 
 ```swift
 // Create an instance of AccessoryManager
-let deviceManager = AccessoryManager()
+val accessoryManager = AccessoryManager(this)
 
-// Set the scanning delegate to handle device scanning events
-deviceManager.scanningDelegate = self
+// Set the scanning listener to handle device scanning events
+accessoryManager.setScanningListener(this)
 
 // Set the status delegate to monitor the Bluetooth status
-deviceManager.statusDelegate = self
+accessoryManager.setStatusListener(this)
+
 ```
- [AccessoryManagerStatusDelegate](AccessoryManager.md#accessorymanagerstatusdelegate) will be called when the Bluetooth status changes
+ [AccessoryManagerStatusListener](docs/AccessoryManagerStatusListener.md) will be called when the Bluetooth status changes
  ```
-func accessoryManager(_ manager: AccessoryManager?, isAvailable: Bool) {
-    if isAvailable {
-        // Bluetooth is available and enabled
-        print("Bluetooth is available.")
-        // Proceed with scanning or other Bluetooth-related tasks
-    } else {
-        // Bluetooth is not available or is turned off
-        print("Bluetooth is not available.")
-        // Handle the scenario where Bluetooth is unavailable
-    }
+/**
+	* Notifies whether the bluetooth power is opened (Bluetooth is enabled and ready to scan)
+	*/
+override fun accessoryManager(manager: AccessoryManager?, isAvailable: Boolean) {
+	if (isAvailable) {
+
+	} else {
+
+	}
 }
 ```
 ### Scan
-The `startScan` or `startScan(duration:)` method in the [AccessoryManager](AccessoryManager.md#methods) class is used to initiate the scanning process for nearby Bluetooth devices. Once called, it begins searching for Bluetooth accessories within range. This method works in conjunction with the `AccessoryManagerScanningDelegate` methods to handle the scanning and discovery of devices.
+The `startScan()` or `startScan(int duration)` method in the [AccessoryManager](docs/AccessoryManager.md) class is used to initiate the scanning process for nearby Bluetooth devices. Once called, it begins searching for Bluetooth accessories within range. This method works in conjunction with the `AccessoryManagerScanningListener` methods to handle the scanning and discovery of devices.
 
 ```
-deviceManager.startScan()
+ if (BluetoothPermissionHelper.checkAndRequestBluetoothPermissions(this@MainActivity)){
+     accessoryManager.clearAccessories()
+     accessoryManager.startScan(5)
+}
 ```
-[AccessoryManagerScanningDelegate](AccessoryManager.md#accessorymanagerscanningdelegate) will be called when scanning
-
+[AccessoryManagerScanningListener](docs/AccessoryManagerScanningListener.md) will be called when scanning
 ```
-/// This method is called when the scanning process starts or stops.
-func accessoryManager(_ manager: AccessoryManager?, isScanning: Bool) {
-     if isScanning {
-        print("Scanning started...")
-    } else {
-        print("Scanning stopped.")
+/**
+     * Callback from `AccessoryManagerScanningListener` to monitor changes
+     * in the current scanning state.
+     */
+    override fun accessoryManagerIsScanning(manager: AccessoryManager?, isScanning: Boolean) {
+        loadingState.value = isScanning;
     }
-}
 
-/// This method is called when a new Bluetooth device is discovered during the scan.
-func accessoryManager(_ manager: AccessoryManager?, didDiscover device: Accessory?, rssi: NSNumber?) {
-    guard let device = device as? JinHaoAccessory else { return }
-    print("Discovered device: \(device.deviceName), RSSI: \(rssi ?? 0)")
-    // Handle device discovery (e.g., update UI or store device)
-}
-
-/// This method is called when the information of an already discovered device is updated during scanning (e.g., when the RSSI value changes).
-func accessoryManager(_ manager: AccessoryManager?, didUpdate device: Accessory?, rssi: NSNumber?) {
-     guard let device = device as? JinHaoAccessory else { return }
-    if let updatedRSSI = rssi {
-        print("Updated RSSI for device \(device.deviceName): \(updatedRSSI)")
-        // Handle updated device info (e.g., update UI with new RSSI value)
+    /**
+     * Callback from `AccessoryManagerScanningListener` triggered when
+     * a new device is discovered during scanning.
+     */
+    override fun accessoryManagerDidDiscover(
+        manager: AccessoryManager?,
+        device: Accessory?,
+        rssi: Int?
+    ) {
+        if (device is JinHaoAccessory) {
+            Log.w("tag", String.format("name=${device.deviceName}, address=${device.address}"))
+            accessorys.add(device)
+        }
     }
-}
+
+    /**
+     * Callback from `AccessoryManagerScanningListener` triggered
+     * when an already discovered device's information is updated.
+     */
+    override fun accessoryManagerDidUpdate(
+        manager: AccessoryManager?,
+        device: Accessory?,
+        rssi: Int?
+    ) {
+
+    }
 ```
 
 ### Connect
@@ -281,10 +342,20 @@ device.excute(JinHaoRequest.readProgramVolume(), Consumer {
 
 
 #### Adjust Volume 
-The volume adjustment range of the hearing aid is either 0–10 or 0–5, depending on the specific model of the hearing aid. You can refer to [JinHaoRequest.controlVolume](docs/JinHaoRequest.md).
+The volume adjustment range of the hearing aid is either 0–10 or 0–5, depending on the profile(`JinHaoProfile`) of the `JinHaoAccessory`. 
+- Before adjusting the volume, we must first call the `JinHaoRequest.readProfile(JinHaoProfileType.PRODUCT_SKU)` to determine the maximum and minimum volume values.
+```
+device.excute(JinHaoRequest.readProfile(JinHaoProfileType.PRODUCT_SKU), Consumer {
+    if (it.isSuccess) {
+        minVolumeState.value = device.profile.minVolume.toFloat()
+        maxVolumeState.value = device.profile.maxVolume.toFloat()
+        Log.w(tag, "success to read sku: ${device.profile.skuCode}, minVolume is: ${device.profile.minVolume}, maxVolume is: ${device.profile.maxVolume}")
+    }
+})
+```
+-  Sets the device's volume level.
 ```
 /**
-* Sets the device's volume level.
 * Once the volume is set, the updated value can be retrieved in the `deviceDidUpdateValue` callback.
 */
 device?.excute(JinHaoRequest.controlVolume(it.roundToInt(), programState.value.roundToInt()), Consumer {
@@ -432,7 +503,7 @@ override fun deviceDidUpdateValue(device: JinHaoAccessory?) {
                         directionState.value = 3F
                     }
                 }
-
+                //range of value is dsp.minEqValue to dsp.maxEqValue
                 eqState[250]?.value = it.eq250.toFloat()
                 eqState[500]?.value = it.eq500.toFloat()
                 eqState[1000]?.value = it.eq1000.toFloat()
@@ -477,6 +548,7 @@ override fun didChangedVolumeByAid(device: JinHaoAccessory?, previous: Int, curr
 ```
 
 ## API Document
+- [BluetoothPermissionHelper](docs/BluetoothPermissionHelper.md)
 - [Accessory](docs/Accessory.md)
 - [AccessoryListener](docs/AccessoryListener.md)
 - [AccessoryManager](docs/AccessoryManager.md)
