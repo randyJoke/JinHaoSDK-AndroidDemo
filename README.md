@@ -719,7 +719,7 @@ override fun didChangedVolumeByAid(device: JinHaoAccessory?, previous: Int, curr
 - [JinHaoChip](docs/JinHaoChip.md)
 - [JinHaoDsp](docs/JinHaoDsp.md)
 - [JinHaoA4Dsp](docs/JinHaoA4Dsp.md)
-- [JinHaoA16Dsp](docs/JinHaoa16Dsp.md)
+- [JinHaoA16Dsp](docs/JinHaoA16Dsp.md)
 - [JinHaoGlobalDsp](docs/JinHaoGlobalDsp.md)
 - [JinHaoOrientation](docs/JinHaoOrientation.md)
 - [JinHaoProfile](docs/JinHaoProfile.md)
