@@ -1,76 +1,74 @@
-# JinHaoDsp 
+# JinHaoA4Dsp
 
-The `JinHaoDsp` class is an abstract class that defines the Digital Signal Processing (DSP) parameters for JinHao hearing aids. It provides methods for setting and getting various DSP settings such as MPO (Maximum Power Output), noise reduction levels, directionality, and equalizer settings across different frequency bands. The class also provides methods for creating a specific DSP instance based on the hearing aid's chip type and copying DSP settings.
+This class represents a DSP configuration for the JinHao A4 hearing aid device, including methods to configure and manage DSP settings.
 
-## Enums
+## Enum: `MPO`
 
-### MPO (Maximum Power Output)
+Defines the possible values for Maximum Power Output (MPO).
 
-| Constant  | Description                   |
-|-----------|-------------------------------|
-| `OFF`     | MPO is turned off.             |
-| `LOW`     | Low MPO setting.               |
-| `MEDIUM`  | Medium MPO setting.            |
-| `HIGH`    | High MPO setting.              |
-| `UNKNOWN` | MPO setting is unknown.        |
-
-### NOISE (Noise Reduction)
-
-| Constant  | Description                   |
-|-----------|-------------------------------|
-| `OFF`     | Noise reduction is off.        |
-| `WEAK`    | Weak noise reduction.          |
-| `MEDIUM`  | Medium noise reduction.        |
-| `STRONG`  | Strong noise reduction.        |
-| `UNKNOWN` | Noise setting is unknown.      |
-
-### DIRECTION (Directional Microphone Settings)
-
-| Constant  | Description                   |
-|-----------|-------------------------------|
-| `NORMAL`  | Normal microphone direction.   |
-| `TV`      | TV mode.                       |
-| `METTING` | Meeting mode.                  |
-| `FACE`    | Face-to-face mode.             |
-| `UNKNOWN` | Direction setting is unknown.  |
+| Value    | Description                                       |
+|----------|---------------------------------------------------|
+| `OFF`    | Maximum Power Output is turned off               |
+| `LOW`    | Low Maximum Power Output                         |
+| `MEDIUM` | Medium Maximum Power Output                      |
+| `HIGH`   | High Maximum Power Output                        |
+| `UNKNOWN`| Unknown MPO setting                              |
 
 ## Methods
 
-| Method Signature                          | Description                                                                 |
-|-------------------------------------------|-----------------------------------------------------------------------------|
-| `static JinHaoDsp create(byte[] bytes, JinHaoChip chip)` | Creates a specific DSP instance based on the provided chip type.           |
-| `abstract JinHaoDsp copy()`               | Creates a copy of the current DSP instance.                                 |
-| `abstract byte[] toBytes()`               | Converts the DSP settings to a byte array.                                  |
-| `abstract void setMpo(MPO mpo)`           | Sets the MPO (Maximum Power Output) setting.                               |
-| `abstract MPO getMpo()`                   | Gets the current MPO setting.                                               |
-| `abstract void setDirection(DIRECTION direction)` | Sets the directionality of the microphones.                                 |
-| `abstract DIRECTION getDirection()`       | Gets the current microphone directionality setting.                         |
-| `abstract void setNoise(NOISE noise)`     | Sets the noise reduction level.                                            |
-| `abstract NOISE getNoise()`               | Gets the current noise reduction setting.                                  |
-| `abstract void setEq250(byte eq250)`      | Sets the equalizer value for 250 Hz.                                        |
-| `abstract void setEq500(byte eq500)`      | Sets the equalizer value for 500 Hz.                                        |
-| `abstract void setEq1000(byte eq1000)`    | Sets the equalizer value for 1000 Hz.                                       |
-| `abstract void setEq1500(byte eq1500)`    | Sets the equalizer value for 1500 Hz.                                       |
-| `abstract void setEq2000(byte eq2000)`    | Sets the equalizer value for 2000 Hz.                                       |
-| `abstract void setEq2500(byte eq2500)`    | Sets the equalizer value for 2500 Hz.                                       |
-| `abstract void setEq3000(byte eq3000)`    | Sets the equalizer value for 3000 Hz.                                       |
-| `abstract void setEq3500(byte eq3500)`    | Sets the equalizer value for 3500 Hz.                                       |
-| `abstract void setEq4000(byte eq4000)`    | Sets the equalizer value for 4000 Hz.                                       |
-| `abstract void setEq5000(byte eq5000)`    | Sets the equalizer value for 5000 Hz.                                       |
-| `abstract void setEq6000(byte eq6000)`    | Sets the equalizer value for 6000 Hz.                                       |
-| `abstract void setEq7000(byte eq7000)`    | Sets the equalizer value for 7000 Hz.                                       |
-| `abstract byte getEq250()`                | Gets the equalizer value for 250 Hz.                                        |
-| `abstract byte getEq500()`                | Gets the equalizer value for 500 Hz.                                        |
-| `abstract byte getEq1000()`               | Gets the equalizer value for 1000 Hz.                                       |
-| `abstract byte getEq1500()`               | Gets the equalizer value for 1500 Hz.                                       |
-| `abstract byte getEq2000()`               | Gets the equalizer value for 2000 Hz.                                       |
-| `abstract byte getEq2500()`               | Gets the equalizer value for 2500 Hz.                                       |
-| `abstract byte getEq3000()`               | Gets the equalizer value for 3000 Hz.                                       |
-| `abstract byte getEq3500()`               | Gets the equalizer value for 3500 Hz.                                       |
-| `abstract byte getEq4000()`               | Gets the equalizer value for 4000 Hz.                                       |
-| `abstract byte getEq5000()`               | Gets the equalizer value for 5000 Hz.                                       |
-| `abstract byte getEq6000()`               | Gets the equalizer value for 6000 Hz.                                       |
-| `abstract byte getEq7000()`               | Gets the equalizer value for 7000 Hz.                                       |
-| `abstract byte getMinEqValue()`           | Gets the minimum equalizer value across all frequency bands.               |
-| `abstract byte getMaxEqValue()`           | Gets the maximum equalizer value across all frequency bands.               |
+| Method Name                  | Description                                                      | Parameters                                                                 | Return Type  | Parameter Value Range                                      |
+|------------------------------|------------------------------------------------------------------|--------------------------------------------------------------------------|--------------|------------------------------------------------------------|
+| `create(byte[] bytes)`        | Creates an instance of `JinHaoA4Dsp` from a byte array.         | `bytes`: Byte array containing DSP data.                                | `JinHaoA4Dsp`| -                                                          |
+| `copy()`                      | Returns a copy of the current `JinHaoA4Dsp` instance.           | None                                                                     | `JinHaoA4Dsp`| -                                                          |
+| `toBytes()`                   | Converts the current `JinHaoA4Dsp` object to a byte array.       | None                                                                     | `byte[]`     | -                                                          |
+| `getFrequences()`             | Returns the list of supported frequencies.                       | None                                                                     | `int[]`      | Array of supported frequencies. [250, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000, 6000, 7000] |
+| `setEq(int frequence, int eq)`| Sets the equalizer value for a specified frequency.              | `frequence`: Frequency (e.g., 250, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000, 6000, 7000).<br>`eq`: Equalizer value (0-15) | None        | `frequence`: Supported frequencies.<br> `eq`: 0 to 15      |
+| `getEq(int frequence)`        | Gets the equalizer value for a specified frequency.              | `frequence`: Frequency (e.g., 250, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000, 6000, 7000)                           | `int`        | `frequence`: Supported frequencies.<br> Returns `-2` if frequency not found. |
+| `setNoise(NOISE noise)`       | Sets the noise reduction level.                                  | `noise`: Noise reduction level (`OFF`, `WEAK`, `MEDIUM`, `STRONG`).      | None         | `noise`: `OFF`, `WEAK`, `MEDIUM`, `STRONG`                |
+| `getNoise()`                  | Gets the current noise reduction level.                          | None                                                                     | `NOISE`      | `OFF`, `WEAK`, `MEDIUM`, `STRONG`, `UNKNOWN`               |
+| `getMinEqValue()`             | Gets the minimum value for the equalizer.                        | None                                                                     | `int`        | 0                                                          |
+| `getMaxEqValue()`             | Gets the maximum value for the equalizer.                        | None                                                                     | `int`        | 15                                                         |
+| `setDirection(DIRECTION direction)` | Sets the directional mode for the DSP.                        | `direction`: Directional mode (`NORMAL`, `TV`, `METTING`, `FACE`).       | None         | `direction`: `NORMAL`, `TV`, `METTING`, `FACE`            |
+| `getDirection()`              | Gets the current directional mode for the DSP.                   | None                                                                     | `DIRECTION`  | `NORMAL`, `TV`, `METTING`, `FACE`, `UNKNOWN`               |
+| `setMpo(MPO mpo)`             | Sets the Maximum Power Output (MPO) level.                      | `mpo`: Maximum Power Output (`OFF`, `LOW`, `MEDIUM`, `HIGH`).           | None         | `mpo`: `OFF`, `LOW`, `MEDIUM`, `HIGH`                     |
+| `getMpo()`                    | Gets the current Maximum Power Output (MPO) level.               | None                                                                     | `MPO`        | `OFF`, `LOW`, `MEDIUM`, `HIGH`, `UNKNOWN`                  |
 
+## Constants: `NOISE`, `DIRECTION`
+
+Enumerations representing different levels of noise reduction (`NOISE`) and directional modes (`DIRECTION`).
+
+---
+
+### Example Usage
+
+```kotlin
+// Change MPO
+val dsp = device?.dsp?.copy()
+if (dsp is JinHaoA4Dsp) {
+    mpoState.value = it
+    when {
+        it.roundToInt() == 0 -> {
+            dsp.mpo = JinHaoA4Dsp.MPO.OFF
+        }
+        it.roundToInt() == 1 -> {
+            dsp.mpo = JinHaoA4Dsp.MPO.LOW
+        }
+        it.roundToInt() == 2 -> {
+            dsp?.mpo = JinHaoA4Dsp.MPO.MEDIUM
+        }
+        it.roundToInt() == 3 -> {
+            dsp?.mpo = JinHaoA4Dsp.MPO.HIGH
+        }
+    }
+    dsp.let {
+        device?.excute(
+            JinHaoRequest.writeDsp(
+                it,
+                programState.value.roundToInt(),
+                true
+            ), Consumer {
+
+            })
+    }
+}
+```
