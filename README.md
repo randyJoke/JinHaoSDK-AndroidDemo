@@ -13,7 +13,17 @@ This guide will walk you through the steps to integrate the SDK into your Androi
         - [Reading Hearing Aid Information](#reading-hearing-aid-information)
         - [Adjust Volume](#adjust-volume)
         - [Switching Programs](#switching-programs)
-        - [Change Dsp](#change-dsp)
+        - [Frequence](#frequence)
+        - [EQ](#eq)
+        - [MPO](#mpo)
+        - [Noise](#noise)
+        - [Direction](#change-direction)
+        - [Compression Threshold](#compression-threshold)
+        - [Compression Ratio](#compression-ratio)
+        - [Attack Time](#attack-time)
+        - [Release Time](#release-time)
+        - [Data Log](#data-log)
+        - [Read Battery](#read-battery)
         - [Notify](#notify)
 - [API Document](#api-document)
 
@@ -373,25 +383,89 @@ device?.excute(JinHaoRequest.controlProgram(program.roundToInt()), Consumer { re
 })
 ```
 
-#### Change Dsp
-The modification of the DSP mode file is primarily done by modifying the object that conforms to the [JinHaoDsp](docs/JinHaoDsp.md)，we must first create a copy of it  and then sending the `JinHaoRequest.writeDsp` of [JinHaoRequest](docs/JinHaoRequest.md)  to apply the changes. 
-- **change mpo**
+#### Frequence
+When modifying MPO, noise, direction, and so on, we should first obtain the frequency modification range supported by the hearing aid.
+```
+device.excute(JinHaoRequest.readDsp(currentProgram), Consumer {
+    Log.w(tag, "Finished reading program ${currentProgram} DSP file")
+
+    val dsp = device?.dsp?.copy()
+    val frequences = device.dsp.frequences
+})
+```
+- **JinHaoA4Dsp**
+    if dsp is JinHaoA4Dsp, frequences = [250, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000, 6000, 7000]
+- **JinHaoA16Dsp**
+    if dsp is JinHaoA16Dsp, frequences = [250, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500]
+
+#### EQ
+Before modifying the EQ, we must first obtain the JinHaoDsp for the current program.
+```
+device.excute(JinHaoRequest.readDsp(currentProgram), Consumer {
+    Log.w(tag, "Finished reading program ${currentProgram} DSP file")
+})
+```
+then we can refer to the [JinHaoDsp](docs/JinHaoDsp.md) API to modify the EQ. for example:
 ```
 val dsp = device?.dsp?.copy()
-when {
-    it.roundToInt() == 0 -> {
-        dsp?.mpo = JinHaoDsp.MPO.OFF
-    }
-    it.roundToInt() == 1 -> {
-        dsp?.mpo = JinHaoDsp.MPO.LOW
-    }
-    it.roundToInt() == 2 -> {
-        dsp?.mpo = JinHaoDsp.MPO.MEDIUM
-    }
-    it.roundToInt() == 3 -> {
-        dsp?.mpo = JinHaoDsp.MPO.HIGH
+dsp?.setEq(250, 10))
+dsp?.let {
+    device?.excute(JinHaoRequest.writeDsp(it, currentProgram, true), Consumer {
+
+    })
+}
+```
+
+#### MPO
+
+Before modifying the MPO, we must first obtain the JinHaoDsp for the current program; if it has already been obtained, there's no need to call it again.
+```
+device.excute(JinHaoRequest.readDsp(currentProgram), Consumer {
+    Log.w(tag, "Finished reading program ${currentProgram} DSP file")
+})
+```
+There are two cases when modifying the MPO, because the JinHaoDsp may be either [JinHaoA4Dsp](docs/JinHaoA4Dsp.md) or [JinHaoA16Dsp](docs/JinHaoA16Dsp.md). Below, we will set the MPO based on each case.
+
+- **JinHaoA4Dsp**
+```
+val dsp = device?.dsp?.copy()
+if (dsp is JinHaoA4Dsp) {
+    dsp.mpo = JinHaoDsp.MPO.OFF
+    dsp.let {
+        device?.excute(JinHaoRequest.writeDsp(it, currentProgram, true), Consumer {
+            if (it.isSuccess) {
+                
+            }
+        })
     }
 }
+```
+- **JinHaoA16Dsp**
+```
+val dsp = device?.dsp?.copy()
+if (dsp is JinHaoA16Dsp) {
+    dsp.setMpoLevel(250, it.roundToInt())
+    dsp.let {
+        device?.excute(JinHaoRequest.writeDsp(it, currentProgram, true), Consumer {
+            if (it.isSuccess) {
+                
+            }
+        })
+    }
+}
+```
+
+#### Noise
+Before modifying the Noise, we must first obtain the JinHaoDsp for the current program; if it has already been obtained, there's no need to call it again.
+```
+device.excute(JinHaoRequest.readDsp(currentProgram), Consumer {
+    Log.w(tag, "Finished reading program ${currentProgram} DSP file")
+})
+```
+then we can refer to the [JinHaoDsp](docs/JinHaoDsp.md) API to modify the [Noise](docs/JinHaoDsp.md#noise). for example:
+```
+val dsp = device?.dsp?.copy()
+dsp?.noise = JinHaoDsp.NOISE.OFF
 dsp?.let {
     device?.excute(JinHaoRequest.writeDsp(it, programState.value.roundToInt(), true), Consumer {
         if (it.isSuccess) {
@@ -401,23 +475,17 @@ dsp?.let {
 }
 ```
 
-- **change noise**
+#### Direction
+Before modifying the Direction, we must first obtain the JinHaoDsp for the current program; if it has already been obtained, there's no need to call it again.
+```
+device.excute(JinHaoRequest.readDsp(currentProgram), Consumer {
+    Log.w(tag, "Finished reading program ${currentProgram} DSP file")
+})
+```
+then we can refer to the [JinHaoDsp](docs/JinHaoDsp.md) API to modify the [Direction](docs/JinHaoDsp.md#direction). for example:
 ```
 val dsp = device?.dsp?.copy()
-when {
-    it.roundToInt() == 0 -> {
-        dsp?.direction = JinHaoDsp.DIRECTION.NORMAL
-    }
-    it.roundToInt() == 1 -> {
-        dsp?.direction = JinHaoDsp.DIRECTION.TV
-    }
-    it.roundToInt() == 2 -> {
-        dsp?.direction = JinHaoDsp.DIRECTION.METTING
-    }
-    it.roundToInt() == 3 -> {
-        dsp?.direction = JinHaoDsp.DIRECTION.FACE
-    }
-}
+dsp?.direction = JinHaoDsp.DIRECTION.NORMAL
 dsp?.let {
     device?.excute(JinHaoRequest.writeDsp(it, programState.value.roundToInt(), true), Consumer {
         if (it.isSuccess) {
@@ -427,32 +495,123 @@ dsp?.let {
 }
 ```
 
-- **change eq**
-  
+#### Compression Threshold
+The compression threshold applies only to [JinHaoA16Dsp](docs/JinHaoA16Dsp.md). Before modifying the Compression Threshold, we must first obtain the JinHaoDsp for the current program; if it has already been obtained, there's no need to call it again. 
 ```
-val dsp = device?.dsp?.copy()
-when (frequency) {
-    250 -> dsp?.eq250 = it.toInt().toByte()
-    500 -> dsp?.eq500 = it.toInt().toByte()
-    1000 -> dsp?.eq1000 = it.toInt().toByte()
-    1500 -> dsp?.eq1500 = it.toInt().toByte()
-    2000 -> dsp?.eq2000 = it.toInt().toByte()
-    2500 -> dsp?.eq2500 = it.toInt().toByte()
-    3000 -> dsp?.eq3000 = it.toInt().toByte()
-    3500 -> dsp?.eq3500 = it.toInt().toByte()
-    4000 -> dsp?.eq4000 = it.toInt().toByte()
-    5000 -> dsp?.eq5000 = it.toInt().toByte()
-    6000 -> dsp?.eq6000 = it.toInt().toByte()
-    7000 -> dsp?.eq7000 = it.toInt().toByte()
-}
-dsp?.let {
-    device?.excute(JinHaoRequest.writeDsp(it, programState.value.roundToInt(), true), Consumer {
-        if (it.isSuccess) {
-            
+device.excute(JinHaoRequest.readDsp(currentProgram), Consumer {
+    Log.w(tag, "Finished reading program ${currentProgram} DSP file")
+    if (it is JinHaoA16Dsp) {
+        Log.w(tag, "compresstion threshold level is ${it.getCompressRatioLevel(250)}  in 250Hz, value is ${it.getCompressThresholdValue(it.getCompressThresholdLevel(250))}")
+    }
+})
+```
+then we can refer to the [JinHaoA16Dsp](docs/JinHaoA16Dsp.md) API to modify the [compression threshold](docs/JinHaoA16Dsp.md#compression-threshold). for example:
+```
+private fun changeCompressionThreshold() {
+    val dsp = device?.dsp?.copy()
+    if (dsp is JinHaoA16Dsp) {
+        //ct is 0 ~ 35
+        dsp.setCompressThresholdLevel(250, 1)
+        device?.program?.let {
+            device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
+
+            })
         }
-    })
+    }
 }
 ```
+
+#### Compression Ratio
+The compression ratio applies only to [JinHaoA16Dsp](docs/JinHaoA16Dsp.md). Before modifying the compression ratio, we must first obtain the JinHaoDsp for the current program; if it has already been obtained, there's no need to call it again. 
+```
+device.excute(JinHaoRequest.readDsp(currentProgram), Consumer {
+    Log.w(tag, "Finished reading program ${currentProgram} DSP file")
+    if (it is JinHaoA16Dsp) {
+        Log.w(tag, "compresstion ratio level is ${it.getCompressRatioLevel(250)}  in 250Hz, value is ${it.getCompressRatioValue(it.getCompressRatioLevel(250))}")
+    }
+})
+```
+then we can refer to the [JinHaoA16Dsp](docs/JinHaoA16Dsp.md) API to modify the [compression ratio](docs/JinHaoA16Dsp.md#compression-ratio). for example:
+```
+private fun changeCompressionRatio() {
+    val dsp = device?.dsp?.copy()
+    if (dsp is JinHaoA16Dsp) {
+        //compressRatioLevel is 0 ~ 31
+        dsp.setCompressRatioLevel(250, 1)
+        device?.program?.let {
+            device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
+
+            })
+        }
+    }
+}
+```
+
+#### Attack Time
+The attack time applies only to [JinHaoA16Dsp](docs/JinHaoA16Dsp.md). Before modifying the attack time, we must first obtain the JinHaoDsp for the current program; if it has already been obtained, there's no need to call it again. 
+```
+device.excute(JinHaoRequest.readDsp(currentProgram), Consumer {
+    Log.w(tag, "Finished reading program ${currentProgram} DSP file")
+    if (it is JinHaoA16Dsp) {
+        Log.w(tag, "attack time level is ${it.attackTimeLevel}, value is ${it.getAttackTimeValue(it.attackTimeLevel)}")
+    }
+})
+```
+then we can refer to the [JinHaoA16Dsp](docs/JinHaoA16Dsp.md) API to modify the [attack time](docs/JinHaoA16Dsp.md#attack-time). for example:
+```
+private fun changeAttackTime() {
+    val dsp = device?.dsp?.copy()
+    if (dsp is JinHaoA16Dsp) {
+        //attackTimeLevel is 0 ~ 3
+        dsp.attackTimeLevel = 1
+        device?.program?.let {
+            device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
+
+            })
+        }
+    }
+}
+```
+
+#### Release Time
+The release time applies only to [JinHaoA16Dsp](docs/JinHaoA16Dsp.md). Before modifying the release time, we must first obtain the JinHaoDsp for the current program; if it has already been obtained, there's no need to call it again. 
+```
+device.excute(JinHaoRequest.readDsp(currentProgram), Consumer {
+    Log.w(tag, "Finished reading program ${currentProgram} DSP file")
+    if (it is JinHaoA16Dsp) {
+        Log.w(tag, "release time level is ${it.releaseTimeLevel}, value is ${it.getReleaseTimeValue(it.releaseTimeLevel)}")
+    }
+})
+```
+then we can refer to the [JinHaoA16Dsp](docs/JinHaoA16Dsp.md) API to modify the [release time](docs/JinHaoA16Dsp.md#release-time). for example:
+```
+private fun changeReleaseTime() {
+    val dsp = device?.dsp?.copy()
+    if (dsp is JinHaoA16Dsp) {
+        //releaseTimeLevel is 0 ~ 3
+        dsp.releaseTimeLevel = 1
+        device?.program?.let {
+            device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
+
+            })
+        }
+    }
+}
+```
+
+#### Data Log
+Reading the DataLog is only applicable to JinHaoA16Accessory. for example:
+```
+private fun readDataLog() {
+    (device as? JinHaoA16Accessory)?.requestSummaryDataLog {
+        if (it != null) {
+            Log.w(tag, "success to read data log: ${it}")
+        }
+    }
+}
+```
+
+#### Read Battery
 
 #### Notify
 When the battery level changes, the hearing aid's volume or program is switched through the button, or a command is sent to the hearing aid via the request method, the relevant methods in the [JinHaoAccessoryListener](docs/JinHaoAccessoryListener.md) will be triggered.
@@ -504,18 +663,18 @@ override fun deviceDidUpdateValue(device: JinHaoAccessory?) {
                     }
                 }
                 //range of value is dsp.minEqValue to dsp.maxEqValue
-                eqState[250]?.value = it.eq250.toFloat()
-                eqState[500]?.value = it.eq500.toFloat()
-                eqState[1000]?.value = it.eq1000.toFloat()
-                eqState[1500]?.value = it.eq1500.toFloat()
-                eqState[2000]?.value = it.eq2000.toFloat()
-                eqState[2500]?.value = it.eq2500.toFloat()
-                eqState[3000]?.value = it.eq3000.toFloat()
-                eqState[3500]?.value = it.eq3500.toFloat()
-                eqState[4000]?.value = it.eq4000.toFloat()
-                eqState[5000]?.value = it.eq5000.toFloat()
-                eqState[6000]?.value = it.eq6000.toFloat()
-                eqState[7000]?.value = it.eq7000.toFloat()
+                eqState[250]?.value = it.getEq(250).toFloat()
+                eqState[500]?.value = it.getEq(500).toFloat()
+                eqState[1000]?.value = it.getEq(1000).toFloat()
+                eqState[1500]?.value = it.getEq(1500).toFloat()
+                eqState[2000]?.value = it.getEq(2000).toFloat()
+                eqState[2500]?.value = it.getEq(2500).toFloat()
+                eqState[3000]?.value = it.getEq(3000).toFloat()
+                eqState[3500]?.value = it.getEq(3500).toFloat()
+                eqState[4000]?.value = it.getEq(4000).toFloat()
+                eqState[5000]?.value = it.getEq(5000).toFloat()
+                eqState[6000]?.value = it.getEq(6000).toFloat()
+                eqState[7000]?.value = it.getEq(7000).toFloat()
             }
             device.let {
                 volumeState.value = it.volume.toFloat()
@@ -559,6 +718,8 @@ override fun didChangedVolumeByAid(device: JinHaoAccessory?, previous: Int, curr
 - [JinHaoBLEChip](docs/JinHaoBLEChip.md)
 - [JinHaoChip](docs/JinHaoChip.md)
 - [JinHaoDsp](docs/JinHaoDsp.md)
+- [JinHaoA4Dsp](docs/JinHaoA4Dsp.md)
+- [JinHaoA16Dsp](docs/JinHaoa16Dsp.md)
 - [JinHaoGlobalDsp](docs/JinHaoGlobalDsp.md)
 - [JinHaoOrientation](docs/JinHaoOrientation.md)
 - [JinHaoProfile](docs/JinHaoProfile.md)

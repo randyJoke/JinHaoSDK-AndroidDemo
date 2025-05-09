@@ -29,8 +29,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
+import com.jinhao.jinhaosdk.aid.jinhao.JinHaoA16Accessory
 import com.jinhao.jinhaosdk.aid.jinhao.JinHaoAccessory
 import com.jinhao.jinhaosdk.aid.jinhao.JinHaoAccessoryListener
+import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoA16Dsp
+import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoA4Dsp
 import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoDsp
 import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoProfileType
 import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoProgram
@@ -40,7 +43,9 @@ import com.jinhao.jinhaosdk.shared.accessory.AccessoryService
 import com.jinhao.jinhaosdk_androiddemo.DataHolder
 import kotlinx.coroutines.*
 import java.util.function.Consumer
+import kotlin.math.max
 import kotlin.math.roundToInt
+
 
 class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
 
@@ -69,6 +74,8 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
     private var minEQValueState = mutableStateOf<Float>(value = 0f)
 
     private var maxEQValueState = mutableStateOf<Float>(value = 15f)
+
+    private var numberOfProgramState = mutableStateOf<Int>(value = 3)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -151,8 +158,8 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                                     Log.w(tag, "current program is ${program}, current scene mode is ${device!!.scenesOfProgram.get(device!!.program)}")
                                 }
                             })},
-                        valueRange = 0f..3f,
-                        steps = 2
+                        valueRange = 0f..(numberOfProgramState.value).toFloat(),
+                        steps = max(0, numberOfProgramState.value-1)
                     )
                 }
 
@@ -208,7 +215,6 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                     Text(text = "MPO")
                     Slider(value = this@DetailActivity.mpoState.value,
                         onValueChange = {
-                            mpoState.value = it
                             /**
                              * Sets the Maximum Power Output (MPO) mode for the hearing device.
                              * The process involves retrieving the device's DSP, modifying the MPO mode,
@@ -221,25 +227,61 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                              * - HIGH: High-level output limitation
                              */
                             val dsp = device?.dsp?.copy()
-                            when {
-                                it.roundToInt() == 0 -> {
-                                    dsp?.mpo = JinHaoDsp.MPO.OFF
-                                }
-                                it.roundToInt() == 1 -> {
-                                    dsp?.mpo = JinHaoDsp.MPO.LOW
-                                }
-                                it.roundToInt() == 2 -> {
-                                    dsp?.mpo = JinHaoDsp.MPO.MEDIUM
-                                }
-                                it.roundToInt() == 3 -> {
-                                    dsp?.mpo = JinHaoDsp.MPO.HIGH
-                                }
-                            }
-                            dsp?.let {
-                                device?.excute(JinHaoRequest.writeDsp(it, programState.value.roundToInt(), true), Consumer {
+                            if (dsp is JinHaoA4Dsp) {
+                                mpoState.value = it
+                                when {
+                                    it.roundToInt() == 0 -> {
+                                        dsp.mpo = JinHaoA4Dsp.MPO.OFF
+                                    }
 
-                                })
+                                    it.roundToInt() == 1 -> {
+                                        dsp.mpo = JinHaoA4Dsp.MPO.LOW
+                                    }
+
+                                    it.roundToInt() == 2 -> {
+                                        dsp?.mpo = JinHaoA4Dsp.MPO.MEDIUM
+                                    }
+
+                                    it.roundToInt() == 3 -> {
+                                        dsp?.mpo = JinHaoA4Dsp.MPO.HIGH
+                                    }
+                                }
+                                dsp.let {
+                                    device?.excute(
+                                        JinHaoRequest.writeDsp(
+                                            it,
+                                            programState.value.roundToInt(),
+                                            true
+                                        ), Consumer {
+
+                                        })
+                                }
                             }
+
+
+                            /**
+                             *
+                             */
+                            if (dsp is JinHaoA16Dsp) {
+                                mpoState.value = it
+                                dsp.setMpoLevel(250, it.roundToInt())
+                                dsp.setMpoLevel(500, it.roundToInt())
+                                //...
+                                //...
+                                //...
+                                dsp.setMpoLevel(7500, it.roundToInt())
+                                dsp.let {
+                                    device?.excute(
+                                        JinHaoRequest.writeDsp(
+                                            it,
+                                            programState.value.roundToInt(),
+                                            true
+                                        ), Consumer {
+
+                                        })
+                                }
+                            }
+
                         },
                         valueRange = 0f..3f,
                         steps = 2
@@ -324,20 +366,7 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                                  * These values are stored as bytes (minEQValue to maxEQValue) for the DSP (Digital Signal Processor) settings.
                                  */
                                 val dsp = device?.dsp?.copy()
-                                when (frequency) {
-                                    250 -> dsp?.eq250 = it.toInt().toByte()
-                                    500 -> dsp?.eq500 = it.toInt().toByte()
-                                    1000 -> dsp?.eq1000 = it.toInt().toByte()
-                                    1500 -> dsp?.eq1500 = it.toInt().toByte()
-                                    2000 -> dsp?.eq2000 = it.toInt().toByte()
-                                    2500 -> dsp?.eq2500 = it.toInt().toByte()
-                                    3000 -> dsp?.eq3000 = it.toInt().toByte()
-                                    3500 -> dsp?.eq3500 = it.toInt().toByte()
-                                    4000 -> dsp?.eq4000 = it.toInt().toByte()
-                                    5000 -> dsp?.eq5000 = it.toInt().toByte()
-                                    6000 -> dsp?.eq6000 = it.toInt().toByte()
-                                    7000 -> dsp?.eq7000 = it.toInt().toByte()
-                                }
+                                dsp?.setEq(frequency, it.toInt())
                                 dsp?.let {
                                     device?.excute(JinHaoRequest.writeDsp(it, programState.value.roundToInt(), true), Consumer {
 
@@ -425,6 +454,12 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
      */
     override fun deviceDidDiscoverServices(device: Accessory?, services: MutableList<AccessoryService>?) {
         if (device is JinHaoAccessory) {
+            if (device is JinHaoA16Accessory) {
+                device.requestSummaryDataLog {
+
+                }
+            }
+
             device.excute(JinHaoRequest.readProfile(JinHaoProfileType.PRODUCT_SKU), Consumer {
                 if (it.isSuccess) {
                     minVolumeState.value = device.profile.minVolume.toFloat()
@@ -439,6 +474,7 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                     Log.w(tag, "success to read pattern: ${device.profile.patternCode}")
                 }
             })
+
 
             device.excute(JinHaoRequest.readProgramVolume(), Consumer {
                 if (it.isError) {
@@ -455,15 +491,17 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                 }
             })
 
-            device.excute(JinHaoRequest.readNumberOfProgram(device.hearChip), Consumer {
+
+            device.readNumberOfProgram(5000, Consumer {
                 if (it.isError) {
                     Log.w(tag, "Failed to read number of program")
                 } else {
-                    Log.w(tag, "Successfully read number of program is ${device.numberOfProgram}")
+                    numberOfProgramState.value = device.numberOfProgram
+                    Log.w(tag, "Successfully read number of program is ${device.numberOfProgram + 1}")
                 }
             })
 
-            device.excute(JinHaoRequest.readScenesOfProgram(), Consumer {
+            device.readScenesOfProgram(5000, Consumer {
                 val programs = device.scenesOfProgram
                 val type0 = programs.get(0)     //default is NORMAL
                 val type1 = programs.get(1)     //default is RESTAURANT
@@ -473,6 +511,7 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
             })
 
             device.excute(JinHaoRequest.readDsp(0), Consumer {
+                val frequences = device.dsp.frequences
                 Log.w(tag, "Finished reading program 0 DSP file")
             })
             device.excute(JinHaoRequest.readDsp(1), Consumer {
@@ -484,6 +523,29 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
             device.excute(JinHaoRequest.readDsp(3), Consumer {
                 Log.w(tag, "Finished reading program 3 DSP file")
             })
+
+            //range is 0~3, total 4 program(0、1、2、3)
+            device.writeNumberOfProgram(3, 5000, Consumer {
+                if (it.isError) {
+                    Log.w(tag, "Failed to write number of program")
+                } else {
+                    Log.w(tag, "Successfully write number of program")
+                }
+            })
+
+            device.excute(JinHaoRequest.readBrEdr(), Consumer {
+                if (it.isSuccess) {
+                    Log.w(tag, "br edr enable: ${device.isBrEdr}")
+                }
+            })
+
+            device.excute(JinHaoRequest.readBat(), Consumer {
+                if (it.isSuccess) {
+                    Log.w(tag, "bat is: ${device.bat}")
+                }
+            })
+
+            this.readDataLog()
         }
     }
 
@@ -491,7 +553,7 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
      * Callback triggered when the device's battery level changes.
      */
     override fun deviceBatteryChanged(device: JinHaoAccessory?, bat: Int) {
-
+        Log.w(tag, "deviceBatteryChanged bat is: ${device?.bat}")
     }
 
     /**
@@ -505,6 +567,7 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
         runOnUiThread {
             if (device is JinHaoAccessory) {
                 device.dsp?.let {
+                    Log.w(tag, "The hearing aid supports the following channels (frequencies): ${it.frequences}")
                     minEQValueState.value = it.minEqValue.toFloat()
                     maxEQValueState.value = it.maxEqValue.toFloat()
                     when {
@@ -535,25 +598,33 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                             directionState.value = 3F
                         }
                     }
+
+                    if (it is JinHaoA16Dsp) {
+                        Log.w(tag, "compresstion threshold level is ${it.getCompressRatioLevel(250)}  in 250Hz, value is ${it.getCompressThresholdValue(it.getCompressThresholdLevel(250))}")
+                        Log.w(tag, "compresstion ratio level is ${it.getCompressRatioLevel(250)}  in 250Hz, value is ${it.getCompressRatioValue(it.getCompressRatioLevel(250))}")
+                        Log.w(tag, "attack time level is ${it.attackTimeLevel}, value is ${it.getAttackTimeValue(it.attackTimeLevel)}")
+                        Log.w(tag, "release time level is ${it.releaseTimeLevel}, value is ${it.getReleaseTimeValue(it.releaseTimeLevel)}")
+                        Log.w(tag, "mpo level is ${it.getMpoLevel(250)}, value is ${it.getMpoValue(it.getMpoLevel(250))}")
+                    }
+
                     //range of value is dsp.minEqValue to dsp.maxEqValue
-                    eqState[250]?.value = it.eq250.toFloat()
-                    eqState[500]?.value = it.eq500.toFloat()
-                    eqState[1000]?.value = it.eq1000.toFloat()
-                    eqState[1500]?.value = it.eq1500.toFloat()
-                    eqState[2000]?.value = it.eq2000.toFloat()
-                    eqState[2500]?.value = it.eq2500.toFloat()
-                    eqState[3000]?.value = it.eq3000.toFloat()
-                    eqState[3500]?.value = it.eq3500.toFloat()
-                    eqState[4000]?.value = it.eq4000.toFloat()
-                    eqState[5000]?.value = it.eq5000.toFloat()
-                    eqState[6000]?.value = it.eq6000.toFloat()
-                    eqState[7000]?.value = it.eq7000.toFloat()
+                    eqState[250]?.value = it.getEq(250).toFloat()
+                    eqState[500]?.value = it.getEq(500).toFloat()
+                    eqState[1000]?.value = it.getEq(1000).toFloat()
+                    eqState[1500]?.value = it.getEq(1500).toFloat()
+                    eqState[2000]?.value = it.getEq(2000).toFloat()
+                    eqState[2500]?.value = it.getEq(2500).toFloat()
+                    eqState[3000]?.value = it.getEq(3000).toFloat()
+                    eqState[3500]?.value = it.getEq(3500).toFloat()
+                    eqState[4000]?.value = it.getEq(4000).toFloat()
+                    eqState[5000]?.value = it.getEq(5000).toFloat()
+                    eqState[6000]?.value = it.getEq(6000).toFloat()
+                    eqState[7000]?.value = it.getEq(7000).toFloat()
                 }
                 device.let {
                     volumeState.value = it.volume.toFloat()
-                }
-                device.let {
                     programState.value = it.program.toFloat()
+                    numberOfProgramState.value = it.numberOfProgram
                 }
             }
         }
@@ -575,8 +646,80 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
         volumeState.value = current.toFloat()
     }
 
+
+
+    private fun changeCompressionThreshold() {
+        val dsp = device?.dsp?.copy()
+        if (dsp is JinHaoA16Dsp) {
+            //ct is 0 ~ 35
+            dsp.setCompressThresholdLevel(250, 1)
+            device?.program?.let {
+                device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
+
+                })
+            }
+        }
+    }
+
+    private fun changeCompressionRatio() {
+        val dsp = device?.dsp?.copy()
+        if (dsp is JinHaoA16Dsp) {
+            //compressRatioLevel is 0 ~ 31
+            dsp.setCompressRatioLevel(250, 1)
+            device?.program?.let {
+                device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
+
+                })
+            }
+        }
+    }
+
+    private fun changeMPO() {
+        val dsp = device?.dsp?.copy()
+        if (dsp is JinHaoA16Dsp) {
+            //mpo is 0 ~ 11
+            dsp.setMpoLevel(250, 1)
+            device?.program?.let {
+                device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
+
+                })
+            }
+        }
+    }
+
+    private fun changeAttackTime() {
+        val dsp = device?.dsp?.copy()
+        if (dsp is JinHaoA16Dsp) {
+            //attackTimeLevel is 0 ~ 3
+            dsp.attackTimeLevel = 1
+            device?.program?.let {
+                device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
+
+                })
+            }
+        }
+    }
+
+    private fun changeReleaseTime() {
+        val dsp = device?.dsp?.copy()
+        if (dsp is JinHaoA16Dsp) {
+            //releaseTimeLevel is 0 ~ 3
+            dsp.releaseTimeLevel = 1
+            device?.program?.let {
+                device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
+
+                })
+            }
+        }
+    }
+
+    private fun readDataLog() {
+        (device as? JinHaoA16Accessory)?.requestSummaryDataLog {
+            if (it != null) {
+                Log.w(tag, "success to read data log: ${it}")
+            }
+        }
+    }
+
 }
-
-
-
 
