@@ -280,42 +280,29 @@ Before adjusting the volume, switching the program, or executing any other comma
 
 We can send a single command using ``excute(JinHaoRequest request, int timeout, Consumer<JinHaoResult> complete)`` to retrieve information. For more details, Please refer to the related [commands](docs/JinHaoRequest.md) for reading data.
 
-- **read battery**
-```
-device.excute(JinHaoRequest.readBat(), Consumer {
-    if (it.isError) {
-        Log.w(tag, "Failed to read battery")
-    } else {
-        Log.w(tag, "Successfully read battery ${device.bat}")
-    }
-})
-```
 
 - **get number of program**
 ```
-//We can access the total number of programs in the hearing aid, but no more than four.
-device.excute(JinHaoRequest.readNumberOfProgram(device.hearChip), Consumer {
+device.readNumberOfProgram(5000, Consumer {
     if (it.isError) {
-            Log.w(tag, "Failed to read number of program")
-            var numberOfPragram = device.numberOfProgram
-            device.excute(JinHaoRequest.readDsp(0), Consumer {
-            Log.w(tag, "Finished reading program 0 DSP file, current scene is ${device.scenesOfProgram.get(0)}")
-        })
-            device.excute(JinHaoRequest.readDsp(numberOfPragram-1), Consumer {
-            Log.w(tag, "Finished reading program lastest DSP file, current scene is ${device.scenesOfProgram.get(numberOfPragram-1)}")
-        })
-
+        Log.w(tag, "Failed to read number of program")
     } else {
-        Log.w(tag, "Successfully read number of program is ${device.numberOfProgram}")
+        //range of numberOfProgram  is 0~3, total 4 program(0、1、2、3)
+        numberOfProgramState.value = device.numberOfProgram
+        Log.w(tag, "Successfully read number of program is ${device.numberOfProgram + 1}")
     }
 })
 ```
 
 - **obtain the scene mode corresponding to each program, for example, the scene mode of program 0 is scenesOfProgram[0]**
 ```
-device.excute(JinHaoRequest.readScenesOfProgram(), Consumer {
-    val programs = device.scenesOfProgram   
-    Log.w(tag, "Successfully read scenes of program is ${programs.size}, current scene is ${device.scenesOfProgram.get(device.numberOfProgram)}")
+device.readScenesOfProgram(5000, Consumer {
+    val programs = device.scenesOfProgram
+    val type0 = programs.get(0)     //default is NORMAL
+    val type1 = programs.get(1)     //default is RESTAURANT
+    val type2 = programs.get(2)     //default is MUSIC
+    val type3 = programs.get(3)     //default is OUTDOOR
+    Log.w(tag, "Successfully read scenes of program is ${programs.size}")
 })
 ```
 
@@ -612,6 +599,15 @@ private fun readDataLog() {
 ```
 
 #### Read Battery
+```
+device.excute(JinHaoRequest.readBat(), Consumer {
+    if (it.isError) {
+        Log.w(tag, "Failed to read battery")
+    } else {
+        Log.w(tag, "Successfully read battery ${device.bat}")
+    }
+})
+```
 
 #### Notify
 When the battery level changes, the hearing aid's volume or program is switched through the button, or a command is sent to the hearing aid via the request method, the relevant methods in the [JinHaoAccessoryListener](docs/JinHaoAccessoryListener.md) will be triggered.

@@ -496,6 +496,7 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                 if (it.isError) {
                     Log.w(tag, "Failed to read number of program")
                 } else {
+                    //range of numberOfProgram  is 0~3, total 4 program(0、1、2、3)
                     numberOfProgramState.value = device.numberOfProgram
                     Log.w(tag, "Successfully read number of program is ${device.numberOfProgram + 1}")
                 }
