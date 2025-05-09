@@ -597,6 +597,7 @@ private fun readDataLog() {
     }
 }
 ```
+For more details, please refer to [JinHaoDataLog](docs/JinHaoDataLog.md).
 
 #### Read Battery
 ```
@@ -717,6 +718,7 @@ override fun didChangedVolumeByAid(device: JinHaoAccessory?, previous: Int, curr
 - [JinHaoA4Dsp](docs/JinHaoA4Dsp.md)
 - [JinHaoA16Dsp](docs/JinHaoA16Dsp.md)
 - [JinHaoGlobalDsp](docs/JinHaoGlobalDsp.md)
+- [JinHaoDataLog](docs/JinHaoDataLog.md)
 - [JinHaoOrientation](docs/JinHaoOrientation.md)
 - [JinHaoProfile](docs/JinHaoProfile.md)
 - [JinHaoProfileType](docs/JinHaoProfileType.md)
