@@ -15,7 +15,7 @@
 
 | Field Name       | Type   | Description                                   | Value Range      |
 |------------------|--------|-----------------------------------------------|------------------|
-| totalRunTime     | UInt32 | Total run time for this program               | 0 ~ 0xFFFFFFFF   |
+| totalRunTime     | UInt32 | Total run time of the program (in minutes)               | 0 ~ 0xFFFFFFFF   |
 | vcIndex          | UInt32 | cumlutive VC index  		                      | 0 ~ 0xFFFFFFFF   |
 | lessThan50       | UInt32 | Num Occurrences @ <50 dB				              | 0 ~ 0xFFFFFFFF   |
 | between50And60   | UInt32 | Num Occurrences 50db<X>60db					          | 0 ~ 0xFFFFFFFF   |
@@ -27,7 +27,7 @@
 
 | Field Name            | Type                          | Description                                           | Value Range      |
 |-----------------------|-------------------------------|-------------------------------------------------------|------------------|
-| totalRunTime          | UInt32                        | Total Run Time (since reset)				                           | 0 ~ 0xFFFFFFFF   |
+| totalRunTime          | UInt32                        | Total run time since reset (in minutes)		                           | 0 ~ 0xFFFFFFFF   |
 | runTimeSincePowerUp   | UInt32                        | Run Time since power up				                           | 0 ~ 0xFFFFFFFF   |
 | numberOfBatteryChanges| UInt32                        | Number of battery changes                               | 0 ~ 0xFFFFFFFF   |
 | batteryChangeHours    | UInt32                        | Hours accumulated before battery changes              | 0 ~ 0xFFFFFFFF   |
