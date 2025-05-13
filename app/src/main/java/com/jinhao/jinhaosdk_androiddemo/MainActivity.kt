@@ -65,7 +65,7 @@ class MainActivity : ComponentActivity(), AccessoryManagerScanningListener {
         DataHolder.accessoryManager = AccessoryManager(this);
         DataHolder.accessoryManager?.setScanningListener(this);
 
-        JinHaoLog.isPrint = false;
+        JinHaoLog.isPrint = true;
 //        Log.e("TAG", "sdk version is : ${JinHaoLog.sdkVersion()}" );
         setContent {
             MyApp()
