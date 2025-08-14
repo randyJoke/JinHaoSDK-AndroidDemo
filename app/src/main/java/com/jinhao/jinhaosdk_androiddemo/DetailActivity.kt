@@ -34,6 +34,7 @@ import com.jinhao.jinhaosdk.aid.jinhao.JinHaoAccessory
 import com.jinhao.jinhaosdk.aid.jinhao.JinHaoAccessoryListener
 import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoA16Dsp
 import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoA4Dsp
+import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoChip
 import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoDsp
 import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoProfileType
 import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoProgram
@@ -57,7 +58,7 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
 
     private var volumeState = mutableStateOf<Float>(0F)
     private var minVolumeState = mutableStateOf<Float>(0F)
-    private var maxVolumeState = mutableStateOf<Float>(10F)
+    private var maxVolumeState = mutableStateOf<Float>(5F)
 
     private var programState = mutableStateOf<Float>(0F)
 
@@ -199,7 +200,11 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                             }
                             dsp?.let {
                                 device?.excute(JinHaoRequest.writeDsp(it, programState.value.roundToInt(), true), Consumer {
+                                    if (device?.hearChip === JinHaoChip.H01) {
+                                        device?.excute(JinHaoRequest.controlProgram(programState.value.roundToInt()), Consumer {
 
+                                        })
+                                    }
                                 })
                             }
                         },
@@ -323,8 +328,13 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                             }
                             dsp?.let {
                                 device?.excute(JinHaoRequest.writeDsp(it, programState.value.roundToInt(), true), Consumer {
+                                    if (device?.hearChip === JinHaoChip.H01) {
+                                        device?.excute(JinHaoRequest.controlProgram(programState.value.roundToInt()), Consumer {
 
+                                        })
+                                    }
                                 })
+
                             }
                         },
                         valueRange = 0f..3f,
@@ -369,7 +379,11 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                                 dsp?.setEq(frequency, it.toInt())
                                 dsp?.let {
                                     device?.excute(JinHaoRequest.writeDsp(it, programState.value.roundToInt(), true), Consumer {
+                                        if (device?.hearChip === JinHaoChip.H01) {
+                                            device?.excute(JinHaoRequest.controlProgram(programState.value.roundToInt()), Consumer {
 
+                                            })
+                                        }
                                     })
                                 }
                             },
@@ -463,7 +477,7 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
             device.excute(JinHaoRequest.readProfile(JinHaoProfileType.PRODUCT_SKU), Consumer {
                 if (it.isSuccess) {
                     minVolumeState.value = device.profile.minVolume.toFloat()
-                    maxVolumeState.value = device.profile.maxVolume.toFloat()
+                    maxVolumeState.value = 5F
                     Log.w(tag, "success to read sku: ${device.profile.skuCode}, minVolume is: ${device.profile.minVolume}, maxVolume is: ${device.profile.maxVolume}")
                 }
             })
@@ -512,7 +526,6 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
             })
 
             device.excute(JinHaoRequest.readDsp(0), Consumer {
-                val frequences = device.dsp.frequences
                 Log.w(tag, "Finished reading program 0 DSP file")
             })
             device.excute(JinHaoRequest.readDsp(1), Consumer {
@@ -597,6 +610,23 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                         }
                         it.direction == JinHaoDsp.DIRECTION.FACE -> {
                             directionState.value = 3F
+                        }
+                    }
+
+                    if (it is JinHaoA4Dsp) {
+                        when {
+                            it.mpo == JinHaoA4Dsp.MPO.OFF -> {
+                                mpoState.value = 0F
+                            }
+                            it.mpo == JinHaoA4Dsp.MPO.LOW -> {
+                                mpoState.value = 1F
+                            }
+                            it.mpo == JinHaoA4Dsp.MPO.MEDIUM -> {
+                                mpoState.value = 2F
+                            }
+                            it.mpo == JinHaoA4Dsp.MPO.HIGH -> {
+                                mpoState.value = 3F
+                            }
                         }
                     }
 

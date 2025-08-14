@@ -160,7 +160,7 @@ class MainActivity : ComponentActivity(), AccessoryManagerScanningListener {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Demo") },
+                    title = { Text("Tiny600") },
                     colors = TopAppBarDefaults.smallTopAppBarColors(
                         containerColor = Color(0xFF6200EE), // 背景颜色
                         titleContentColor = Color.White     // 标题文本颜色
