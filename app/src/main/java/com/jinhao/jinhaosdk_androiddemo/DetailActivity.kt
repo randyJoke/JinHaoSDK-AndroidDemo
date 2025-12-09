@@ -21,6 +21,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,7 +34,12 @@ import com.jinhao.jinhaosdk.aid.jinhao.JinHaoA16Accessory
 import com.jinhao.jinhaosdk.aid.jinhao.JinHaoAccessory
 import com.jinhao.jinhaosdk.aid.jinhao.JinHaoAccessoryListener
 import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoA16Dsp
+import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoA16DspEnum
 import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoA4Dsp
+import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoA4DspEnum
+import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoA4DspEnum.FrequencyBand
+import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoA4DspEnum.InputMode
+import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoA4DspEnum.MaximumPowerOutput
 import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoChip
 import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoDsp
 import com.jinhao.jinhaosdk.aid.jinhao.data.JinHaoProfileType
@@ -71,6 +77,9 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
     private val frequencies = listOf(250, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000, 6000, 7000)
 
     private var eqState = frequencies.associateWith { mutableStateOf(0f) }
+
+    private var inputModeState = mutableStateOf<Float>(0F)
+    private var fbcState = mutableStateOf<Float>(0F)
 
     private var minEQValueState = mutableStateOf<Float>(value = 0f)
 
@@ -168,6 +177,52 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ){
+                    Text(text = "InputMode")
+                    Slider(value = this@DetailActivity.inputModeState.value,
+                        onValueChange = { it ->
+                            inputModeState.value = it
+                            val dsp = device?.dsp?.copy()
+
+                            if (dsp is JinHaoA16Dsp){
+                                dsp.inputMode = JinHaoA16DspEnum.InputMode.fromValue(it.roundToInt())
+                                dsp.let {
+                                    device?.excute(JinHaoRequest.writeDsp(it, programState.value.roundToInt(), true), Consumer {
+
+                                    })
+                                }
+                            } },
+                        valueRange = 0f..15f,
+                        steps = 14
+                    )
+                }
+
+                Row (
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ){
+                    Text(text = "FBC")
+                    Slider(value = this@DetailActivity.fbcState.value,
+                        onValueChange = { it ->
+                            fbcState.value = it
+                            val dsp = device?.dsp?.copy()
+
+                            if (dsp is JinHaoA16Dsp){
+                                dsp.feedbackCanceler = JinHaoA16DspEnum.FeedbackCanceler.fromValue(it.roundToInt())
+                                dsp.let {
+                                    device?.excute(JinHaoRequest.writeDsp(it, programState.value.roundToInt(), true), Consumer {
+
+                                    })
+                                }
+                            } },
+                        valueRange = 0f..15f,
+                        steps = 14
+                    )
+                }
+
+                Row (
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ){
                     Text(text = "Noise")
                     Slider(value = this@DetailActivity.noiseState.value,
                         onValueChange = {
@@ -236,19 +291,19 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                                 mpoState.value = it
                                 when {
                                     it.roundToInt() == 0 -> {
-                                        dsp.mpo = JinHaoA4Dsp.MPO.OFF
+                                        dsp.maximumPowerOutput = MaximumPowerOutput.MUO
                                     }
 
                                     it.roundToInt() == 1 -> {
-                                        dsp.mpo = JinHaoA4Dsp.MPO.LOW
+                                        dsp.maximumPowerOutput = MaximumPowerOutput.DB_MINUS_4
                                     }
 
                                     it.roundToInt() == 2 -> {
-                                        dsp?.mpo = JinHaoA4Dsp.MPO.MEDIUM
+                                        dsp?.maximumPowerOutput = MaximumPowerOutput.DB_MINUS_12
                                     }
 
                                     it.roundToInt() == 3 -> {
-                                        dsp?.mpo = JinHaoA4Dsp.MPO.HIGH
+                                        dsp?.maximumPowerOutput = MaximumPowerOutput.DB_MINUS_24
                                     }
                                 }
                                 dsp.let {
@@ -269,12 +324,12 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                              */
                             if (dsp is JinHaoA16Dsp) {
                                 mpoState.value = it
-                                dsp.setMpoLevel(250, it.roundToInt())
-                                dsp.setMpoLevel(500, it.roundToInt())
+                                dsp.setMpo(JinHaoA16DspEnum.FrequencyBand.HZ250, JinHaoA16DspEnum.MaximumPowerOutput.fromValue(it.roundToInt()))
+                                dsp.setMpo(JinHaoA16DspEnum.FrequencyBand.HZ500, JinHaoA16DspEnum.MaximumPowerOutput.fromValue(it.roundToInt()))
                                 //...
                                 //...
                                 //...
-                                dsp.setMpoLevel(7500, it.roundToInt())
+                                dsp.setMpo(JinHaoA16DspEnum.FrequencyBand.HZ7500, JinHaoA16DspEnum.MaximumPowerOutput.fromValue(it.roundToInt()))
                                 dsp.let {
                                     device?.excute(
                                         JinHaoRequest.writeDsp(
@@ -615,27 +670,27 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
 
                     if (it is JinHaoA4Dsp) {
                         when {
-                            it.mpo == JinHaoA4Dsp.MPO.OFF -> {
+                            it.maximumPowerOutput == JinHaoA4DspEnum.MaximumPowerOutput.MUO -> {
                                 mpoState.value = 0F
                             }
-                            it.mpo == JinHaoA4Dsp.MPO.LOW -> {
+                            it.maximumPowerOutput == JinHaoA4DspEnum.MaximumPowerOutput.DB_MINUS_4 -> {
                                 mpoState.value = 1F
                             }
-                            it.mpo == JinHaoA4Dsp.MPO.MEDIUM -> {
+                            it.maximumPowerOutput == JinHaoA4DspEnum.MaximumPowerOutput.DB_MINUS_12 -> {
                                 mpoState.value = 2F
                             }
-                            it.mpo == JinHaoA4Dsp.MPO.HIGH -> {
+                            it.maximumPowerOutput == JinHaoA4DspEnum.MaximumPowerOutput.DB_MINUS_24 -> {
                                 mpoState.value = 3F
                             }
                         }
                     }
 
                     if (it is JinHaoA16Dsp) {
-                        Log.w(tag, "compresstion threshold level is ${it.getCompressRatioLevel(250)}  in 250Hz, value is ${it.getCompressThresholdValue(it.getCompressThresholdLevel(250))}")
-                        Log.w(tag, "compresstion ratio level is ${it.getCompressRatioLevel(250)}  in 250Hz, value is ${it.getCompressRatioValue(it.getCompressRatioLevel(250))}")
-                        Log.w(tag, "attack time level is ${it.attackTimeLevel}, value is ${it.getAttackTimeValue(it.attackTimeLevel)}")
-                        Log.w(tag, "release time level is ${it.releaseTimeLevel}, value is ${it.getReleaseTimeValue(it.releaseTimeLevel)}")
-                        Log.w(tag, "mpo level is ${it.getMpoLevel(250)}, value is ${it.getMpoValue(it.getMpoLevel(250))}")
+                        Log.w(tag, "compresstion threshold value is ${it.getCompressRatio(JinHaoA16DspEnum.FrequencyBand.HZ250)}  in 250Hz")
+                        Log.w(tag, "compresstion ratio level is ${it.getCompressRatio(JinHaoA16DspEnum.FrequencyBand.HZ250)}  in 250Hz")
+                        Log.w(tag, "attack time value is ${it.mpoAttackTime}")
+                        Log.w(tag, "release time value is ${it.mpoReleaseTime}")
+                        Log.w(tag, "mpo level is ${it.getMpo(JinHaoA16DspEnum.FrequencyBand.HZ250)}")
                     }
 
                     //range of value is dsp.minEqValue to dsp.maxEqValue
@@ -683,7 +738,7 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
         val dsp = device?.dsp?.copy()
         if (dsp is JinHaoA16Dsp) {
             //ct is 0 ~ 35
-            dsp.setCompressThresholdLevel(250, 1)
+            dsp.setCompressThreshold(JinHaoA16DspEnum.FrequencyBand.HZ250, JinHaoA16DspEnum.CompressionThreshold.DB20)
             device?.program?.let {
                 device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
 
@@ -696,7 +751,7 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
         val dsp = device?.dsp?.copy()
         if (dsp is JinHaoA16Dsp) {
             //compressRatioLevel is 0 ~ 31
-            dsp.setCompressRatioLevel(250, 1)
+            dsp.setCompressRatio(JinHaoA16DspEnum.FrequencyBand.HZ250, JinHaoA16DspEnum.CompressionRatio.RATIO_1_00)
             device?.program?.let {
                 device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
 
@@ -709,7 +764,7 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
         val dsp = device?.dsp?.copy()
         if (dsp is JinHaoA16Dsp) {
             //mpo is 0 ~ 11
-            dsp.setMpoLevel(250, 1)
+            dsp.setMpo(JinHaoA16DspEnum.FrequencyBand.HZ250, JinHaoA16DspEnum.MaximumPowerOutput.DB_MINUS_4)
             device?.program?.let {
                 device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
 
@@ -721,8 +776,7 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
     private fun changeAttackTime() {
         val dsp = device?.dsp?.copy()
         if (dsp is JinHaoA16Dsp) {
-            //attackTimeLevel is 0 ~ 3
-            dsp.attackTimeLevel = 1
+            dsp.mpoAttackTime = JinHaoA16DspEnum.MPOAttackTime.MS10
             device?.program?.let {
                 device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
 
@@ -734,8 +788,7 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
     private fun changeReleaseTime() {
         val dsp = device?.dsp?.copy()
         if (dsp is JinHaoA16Dsp) {
-            //releaseTimeLevel is 0 ~ 3
-            dsp.releaseTimeLevel = 1
+            dsp.mpoReleaseTime = JinHaoA16DspEnum.MPOReleaseTime.MS40
             device?.program?.let {
                 device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
 
