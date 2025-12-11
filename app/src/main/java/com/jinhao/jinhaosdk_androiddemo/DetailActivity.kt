@@ -214,8 +214,8 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                                     })
                                 }
                             } },
-                        valueRange = 0f..15f,
-                        steps = 14
+                        valueRange = 0f..2f,
+                        steps = 1
                     )
                 }
 
@@ -686,6 +686,8 @@ class DetailActivity : ComponentActivity(), JinHaoAccessoryListener {
                     }
 
                     if (it is JinHaoA16Dsp) {
+                        Log.w(tag, "input mode value is ${it.inputMode}")
+                        Log.w(tag, "feedbackcanceler  value is ${it.feedbackCanceler}")
                         Log.w(tag, "compresstion threshold value is ${it.getCompressRatio(JinHaoA16DspEnum.FrequencyBand.HZ250)}  in 250Hz")
                         Log.w(tag, "compresstion ratio level is ${it.getCompressRatio(JinHaoA16DspEnum.FrequencyBand.HZ250)}  in 250Hz")
                         Log.w(tag, "attack time value is ${it.mpoAttackTime}")

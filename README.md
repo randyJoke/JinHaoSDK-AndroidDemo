@@ -18,6 +18,8 @@ This guide will walk you through the steps to integrate the SDK into your Androi
         - [MPO](#mpo)
         - [Noise](#noise)
         - [Direction](#change-direction)
+        - [Input Mode](#inputmode)
+        - [FeedbackCanceler](#feedbackcanceler)
         - [Compression Threshold](#compression-threshold)
         - [Compression Ratio](#compression-ratio)
         - [Attack Time](#attack-time)
@@ -409,6 +411,9 @@ Before modifying the MPO, we must first obtain the JinHaoDsp for the current pro
 ```
 device.excute(JinHaoRequest.readDsp(currentProgram), Consumer {
     Log.w(tag, "Finished reading program ${currentProgram} DSP file")
+    if (it is JinHaoA16Dsp) {
+        Log.w(tag, "mpo value is ${it.getMpo(JinHaoA16DspEnum.FrequencyBand.HZ250)}")
+    }
 })
 ```
 There are two cases when modifying the MPO, because the JinHaoDsp may be either [JinHaoA4Dsp](docs/JinHaoA4Dsp.md) or [JinHaoA16Dsp](docs/JinHaoA16Dsp.md). Below, we will set the MPO based on each case.
@@ -417,12 +422,10 @@ There are two cases when modifying the MPO, because the JinHaoDsp may be either 
 ```
 val dsp = device?.dsp?.copy()
 if (dsp is JinHaoA4Dsp) {
-    dsp.mpo = JinHaoDsp.MPO.OFF
-    dsp.let {
-        device?.excute(JinHaoRequest.writeDsp(it, currentProgram, true), Consumer {
-            if (it.isSuccess) {
-                
-            }
+    dsp.maximumPowerOutput = MaximumPowerOutput.MUO
+    device?.program?.let {
+        device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
+
         })
     }
 }
@@ -431,12 +434,11 @@ if (dsp is JinHaoA4Dsp) {
 ```
 val dsp = device?.dsp?.copy()
 if (dsp is JinHaoA16Dsp) {
-    dsp.setMpoLevel(250, it.roundToInt())
-    dsp.let {
-        device?.excute(JinHaoRequest.writeDsp(it, currentProgram, true), Consumer {
-            if (it.isSuccess) {
-                
-            }
+    //mpo is 0 ~ 11
+    dsp.setMpo(JinHaoA16DspEnum.FrequencyBand.HZ250, JinHaoA16DspEnum.MaximumPowerOutput.DB_MINUS_4)
+    device?.program?.let {
+        device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
+
         })
     }
 }
@@ -482,23 +484,62 @@ dsp?.let {
 }
 ```
 
+#### InputMode
+Before modifying the Input Mode, we must first obtain the JinHaoDsp for the current program; if it has already been obtained, there's no need to call it again.
+```
+device.excute(JinHaoRequest.readDsp(currentProgram), Consumer {
+    Log.w(tag, "input mode value is ${it.inputMode}")
+})
+```
+then we can refer to the [JinHaoA16Dsp](docs/JinHaoA16Dsp.md) API to modify the [Input Mode](docs/JinHaoA16Dsp.md#basic-dsp-settings). for example:
+```
+val dsp = device?.dsp?.copy()
+if (dsp is JinHaoA16Dsp){
+    dsp.inputMode = JinHaoA16DspEnum.InputMode.fromValue(it.roundToInt())
+    dsp.let {
+        device?.excute(JinHaoRequest.writeDsp(it, programState.value.roundToInt(), true), Consumer {
+
+        })
+    }
+} 
+```
+
+#### FeedbackCanceler
+Before modifying the FeedbackCanceler, we must first obtain the JinHaoDsp for the current program; if it has already been obtained, there's no need to call it again.
+```
+device.excute(JinHaoRequest.readDsp(currentProgram), Consumer {
+     Log.w(tag, "feedbackcanceler value is ${it.feedbackCanceler}")
+})
+```
+then we can refer to the [JinHaoA16Dsp](docs/JinHaoA16Dsp.md) API to modify the [FeedbackCanceler](docs/JinHaoA16Dsp.md#basic-dsp-settings). for example:
+```
+val dsp = device?.dsp?.copy()
+if (dsp is JinHaoA16Dsp){
+    dsp.feedbackCanceler = JinHaoA16DspEnum.FeedbackCanceler.fromValue(it.roundToInt())
+    dsp.let {
+        device?.excute(JinHaoRequest.writeDsp(it, programState.value.roundToInt(), true), Consumer {
+
+        })
+    }
+} 
+
 #### Compression Threshold
 The compression threshold applies only to [JinHaoA16Dsp](docs/JinHaoA16Dsp.md). Before modifying the Compression Threshold, we must first obtain the JinHaoDsp for the current program; if it has already been obtained, there's no need to call it again. 
 ```
 device.excute(JinHaoRequest.readDsp(currentProgram), Consumer {
     Log.w(tag, "Finished reading program ${currentProgram} DSP file")
     if (it is JinHaoA16Dsp) {
-        Log.w(tag, "compresstion threshold level is ${it.getCompressRatioLevel(250)}  in 250Hz, value is ${it.getCompressThresholdValue(it.getCompressThresholdLevel(250))}")
+        Log.w(tag, "compresstion threshold value is ${it.getCompressRatio(JinHaoA16DspEnum.FrequencyBand.HZ250)}  in 250Hz")
     }
 })
 ```
-then we can refer to the [JinHaoA16Dsp](docs/JinHaoA16Dsp.md) API to modify the [compression threshold](docs/JinHaoA16Dsp.md#compression-threshold). for example:
+then we can refer to the [JinHaoA16Dsp](docs/JinHaoA16Dsp.md) API to modify the [compression threshold](docs/JinHaoA16Dsp.md#enhanced-methods-frequencyband-based). for example:
 ```
 private fun changeCompressionThreshold() {
     val dsp = device?.dsp?.copy()
     if (dsp is JinHaoA16Dsp) {
         //ct is 0 ~ 35
-        dsp.setCompressThresholdLevel(250, 1)
+        dsp.setCompressThreshold(JinHaoA16DspEnum.FrequencyBand.HZ250, JinHaoA16DspEnum.CompressionThreshold.DB20)
         device?.program?.let {
             device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
 
@@ -514,17 +555,17 @@ The compression ratio applies only to [JinHaoA16Dsp](docs/JinHaoA16Dsp.md). Befo
 device.excute(JinHaoRequest.readDsp(currentProgram), Consumer {
     Log.w(tag, "Finished reading program ${currentProgram} DSP file")
     if (it is JinHaoA16Dsp) {
-        Log.w(tag, "compresstion ratio level is ${it.getCompressRatioLevel(250)}  in 250Hz, value is ${it.getCompressRatioValue(it.getCompressRatioLevel(250))}")
+        Log.w(tag, "compresstion ratio value is ${it.getCompressRatio(JinHaoA16DspEnum.FrequencyBand.HZ250)}  in 250Hz")
     }
 })
 ```
-then we can refer to the [JinHaoA16Dsp](docs/JinHaoA16Dsp.md) API to modify the [compression ratio](docs/JinHaoA16Dsp.md#compression-ratio). for example:
+then we can refer to the [JinHaoA16Dsp](docs/JinHaoA16Dsp.md) API to modify the [compression ratio](docs/JinHaoA16Dsp.md#enhanced-methods-frequencyband-based). for example:
 ```
 private fun changeCompressionRatio() {
     val dsp = device?.dsp?.copy()
     if (dsp is JinHaoA16Dsp) {
         //compressRatioLevel is 0 ~ 31
-        dsp.setCompressRatioLevel(250, 1)
+        dsp.setCompressRatio(JinHaoA16DspEnum.FrequencyBand.HZ250, JinHaoA16DspEnum.CompressionRatio.RATIO_1_00)
         device?.program?.let {
             device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
 
@@ -540,17 +581,16 @@ The attack time applies only to [JinHaoA16Dsp](docs/JinHaoA16Dsp.md). Before mod
 device.excute(JinHaoRequest.readDsp(currentProgram), Consumer {
     Log.w(tag, "Finished reading program ${currentProgram} DSP file")
     if (it is JinHaoA16Dsp) {
-        Log.w(tag, "attack time level is ${it.attackTimeLevel}, value is ${it.getAttackTimeValue(it.attackTimeLevel)}")
+        Log.w(tag, "attack time value is ${it.mpoAttackTime}")    
     }
 })
 ```
-then we can refer to the [JinHaoA16Dsp](docs/JinHaoA16Dsp.md) API to modify the [attack time](docs/JinHaoA16Dsp.md#attack-time). for example:
+then we can refer to the [JinHaoA16Dsp](docs/JinHaoA16Dsp.md) API to modify the [attack time](docs/JinHaoA16Dsp.md#maximum-power-output-mpo-settings). for example:
 ```
 private fun changeAttackTime() {
     val dsp = device?.dsp?.copy()
     if (dsp is JinHaoA16Dsp) {
-        //attackTimeLevel is 0 ~ 3
-        dsp.attackTimeLevel = 1
+        dsp.mpoAttackTime = JinHaoA16DspEnum.MPOAttackTime.MS10
         device?.program?.let {
             device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
 
@@ -566,17 +606,16 @@ The release time applies only to [JinHaoA16Dsp](docs/JinHaoA16Dsp.md). Before mo
 device.excute(JinHaoRequest.readDsp(currentProgram), Consumer {
     Log.w(tag, "Finished reading program ${currentProgram} DSP file")
     if (it is JinHaoA16Dsp) {
-        Log.w(tag, "release time level is ${it.releaseTimeLevel}, value is ${it.getReleaseTimeValue(it.releaseTimeLevel)}")
+        Log.w(tag, "release time value is ${it.mpoReleaseTime}")
     }
 })
 ```
-then we can refer to the [JinHaoA16Dsp](docs/JinHaoA16Dsp.md) API to modify the [release time](docs/JinHaoA16Dsp.md#release-time). for example:
+then we can refer to the [JinHaoA16Dsp](docs/JinHaoA16Dsp.md) API to modify the [release time](docs/JinHaoA16Dsp.md#maximum-power-output-mpo-settings). for example:
 ```
 private fun changeReleaseTime() {
     val dsp = device?.dsp?.copy()
     if (dsp is JinHaoA16Dsp) {
-        //releaseTimeLevel is 0 ~ 3
-        dsp.releaseTimeLevel = 1
+        dsp.mpoReleaseTime = JinHaoA16DspEnum.MPOReleaseTime.MS40
         device?.program?.let {
             device!!.excute(JinHaoRequest.writeDsp(dsp, it, true), Consumer {
 
@@ -725,4 +764,6 @@ override fun didChangedVolumeByAid(device: JinHaoAccessory?, previous: Int, curr
 - [JinHaoProgram](docs/JinHaoProgram.md)
 - [JinHaoRequest](docs/JinHaoRequest.md)
 - [JinHaoResult](docs/JinHaoResult.md)
+- [JinHaoA16DspEnum](docs/JinHaoA16DspEnum.md)
+- [JinHaoA4DspEnum](docs/JinHaoA4DspEnum.md)
 - [JinHaoResultError](docs/JinHaoResultError.md)

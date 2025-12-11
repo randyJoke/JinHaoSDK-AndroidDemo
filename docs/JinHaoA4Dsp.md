@@ -1,74 +1,114 @@
-# JinHaoA4Dsp
+# JinHaoA4DSP 
 
-This class represents a DSP configuration for the JinHao A4 hearing aid device, including methods to configure and manage DSP settings.
+## Properties
 
-## Enum: `MPO`
+### Basic DSP Settings
 
-Defines the possible values for Maximum Power Output (MPO).
+| Property | Type | Default Value | Description |
+|----------|------|--------------|-------------|
+| `inputMode` | `JinHaoA4DspEnum.InputMode` | `AI0_TC` | Input source selection for DSP |
+| `preGainMic1` | `JinHaoA4DspEnum.PreampGain` | `DB0` | Pre-amplifier gain for microphone 1 |
+| `preGainMic2` | `JinHaoA4DspEnum.PreampGain` | `DB0` | Pre-amplifier gain for microphone 2 |
+| `matrixGainMantissa` | `int` | `0` | Mantissa component of matrix gain calculation |
+| `matrixGainExponent` | `int` | `0` | Exponent component of matrix gain calculation |
+| `feedbackCanceler` | `JinHaoA4DspEnum.FeedbackCanceler` | `OFF` | Feedback cancellation setting |
+| `compressionRatio1` | `JinHaoA4DspEnum.CompressionRatio` | `RATIO_1_0` | Compression ratio for band 1 |
+| `compressionRatio2` | `JinHaoA4DspEnum.CompressionRatio` | `RATIO_1_0` | Compression ratio for band 2 |
+| `compressionRatio3` | `JinHaoA4DspEnum.CompressionRatio` | `RATIO_1_0` | Compression ratio for band 3 |
+| `compressionRatio4` | `JinHaoA4DspEnum.CompressionRatio` | `RATIO_1_0` | Compression ratio for band 4 |
+| `compressionThreshold` | `JinHaoA4DspEnum.CompressionThreshold` | `DB40` | Compression activation threshold |
+| `expansion` | `JinHaoA4DspEnum.Expansion` | `OFF` | Expansion (noise gate) setting |
+| `lowCutFilter` | `JinHaoA4DspEnum.LowCutFilter` | `HZ200` | Low-cut filter frequency |
+| `highCutFilter` | `JinHaoA4DspEnum.HighCutFilter` | `HZ8000` | High-cut filter frequency |
+| `maximumPowerOutput` | `JinHaoA4DspEnum.MaximumPowerOutput` | `MUO` | Maximum power output limiting |
+| `noiseReduction` | `JinHaoA4DspEnum.NoiseReduction` | `OFF` | Noise reduction level |
+| `notCare` | `int` | `0` | Reserved field for internal use |
 
-| Value    | Description                                       |
-|----------|---------------------------------------------------|
-| `OFF`    | Maximum Power Output is turned off               |
-| `LOW`    | Low Maximum Power Output                         |
-| `MEDIUM` | Medium Maximum Power Output                      |
-| `HIGH`   | High Maximum Power Output                        |
-| `UNKNOWN`| Unknown MPO setting                              |
+### Equalizer Settings
+
+| Property | Type | Default Value | Description |
+|----------|------|--------------|-------------|
+| `equalizerArray` | `JinHaoA4DspEnum.EqualizerGain[]` | Array of 12 `DB0` | Equalizer gain values for 12 frequency bands |
+
+### Frequency Reference
+
+| Property | Type | Default Value | Description |
+|----------|------|--------------|-------------|
+| `FREQUENCIES` | `int[]` (static final) | `[250, 500, ..., 7000]` | Array of 12 frequency values in Hz (constant) |
 
 ## Methods
 
-| Method Name                  | Description                                                      | Parameters                                                                 | Return Type  | Parameter Value Range                                      |
-|------------------------------|------------------------------------------------------------------|--------------------------------------------------------------------------|--------------|------------------------------------------------------------|
-| `create(byte[] bytes)`        | Creates an instance of `JinHaoA4Dsp` from a byte array.         | `bytes`: Byte array containing DSP data.                                | `JinHaoA4Dsp`| -                                                          |
-| `copy()`                      | Returns a copy of the current `JinHaoA4Dsp` instance.           | None                                                                     | `JinHaoA4Dsp`| -                                                          |
-| `toBytes()`                   | Converts the current `JinHaoA4Dsp` object to a byte array.       | None                                                                     | `byte[]`     | -                                                          |
-| `getFrequences()`             | Returns the list of supported frequencies.                       | None                                                                     | `int[]`      | Array of supported frequencies. [250, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000, 6000, 7000] |
-| `setEq(int frequence, int eq)`| Sets the equalizer value for a specified frequency.              | `frequence`: Frequency (e.g., 250, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000, 6000, 7000).<br>`eq`: Equalizer value (0-15) | None        | `frequence`: Supported frequencies.<br> `eq`: 0 to 15      |
-| `getEq(int frequence)`        | Gets the equalizer value for a specified frequency.              | `frequence`: Frequency (e.g., 250, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000, 6000, 7000)                           | `int`        | `frequence`: Supported frequencies.<br> Returns `-2` if frequency not found. |
-| `setNoise(NOISE noise)`       | Sets the noise reduction level.                                  | `noise`: Noise reduction level (`OFF`, `WEAK`, `MEDIUM`, `STRONG`).      | None         | `noise`: `OFF`, `WEAK`, `MEDIUM`, `STRONG`                |
-| `getNoise()`                  | Gets the current noise reduction level.                          | None                                                                     | `NOISE`      | `OFF`, `WEAK`, `MEDIUM`, `STRONG`, `UNKNOWN`               |
-| `getMinEqValue()`             | Gets the minimum value for the equalizer.                        | None                                                                     | `int`        | 0                                                          |
-| `getMaxEqValue()`             | Gets the maximum value for the equalizer.                        | None                                                                     | `int`        | 15                                                         |
-| `setDirection(DIRECTION direction)` | Sets the directional mode for the DSP.                        | `direction`: Directional mode (`NORMAL`, `TV`, `METTING`, `FACE`).       | None         | `direction`: `NORMAL`, `TV`, `METTING`, `FACE`            |
-| `getDirection()`              | Gets the current directional mode for the DSP.                   | None                                                                     | `DIRECTION`  | `NORMAL`, `TV`, `METTING`, `FACE`, `UNKNOWN`               |
-| `setMpo(MPO mpo)`             | Sets the Maximum Power Output (MPO) level.                      | `mpo`: Maximum Power Output (`OFF`, `LOW`, `MEDIUM`, `HIGH`).           | None         | `mpo`: `OFF`, `LOW`, `MEDIUM`, `HIGH`                     |
-| `getMpo()`                    | Gets the current Maximum Power Output (MPO) level.               | None                                                                     | `MPO`        | `OFF`, `LOW`, `MEDIUM`, `HIGH`, `UNKNOWN`                  |
+### Matrix Gain Methods
 
-## Constants: `NOISE`, `DIRECTION`
+| Method | Parameters | Return Type | Description |
+|--------|------------|-------------|-------------|
+| `setMatrixGain(int matrixGain)` | `matrixGain`: int value (-47 to -1) | `void` | Sets matrix gain using single integer value |
+| `getMatrixGain()` | None | `int` | Calculates and returns current matrix gain |
 
-Enumerations representing different levels of noise reduction (`NOISE`) and directional modes (`DIRECTION`).
+### Equalizer Methods
 
----
+| Method | Parameters | Return Type | Description |
+|--------|------------|-------------|-------------|
+| `setEqualizerGain(FrequencyBand band, EqualizerGain gain)` | `band`: frequency band enum, `gain`: equalizer gain | `void` | Sets equalizer gain using FrequencyBand enum |
+| `getEqualizerGain(FrequencyBand band)` | `band`: frequency band enum | `EqualizerGain` | Returns equalizer gain using FrequencyBand enum |
 
-### Example Usage
+### Inherited Methods Implementation
 
-```kotlin
-// Change MPO
-val dsp = device?.dsp?.copy()
-if (dsp is JinHaoA4Dsp) {
-    mpoState.value = it
-    when {
-        it.roundToInt() == 0 -> {
-            dsp.mpo = JinHaoA4Dsp.MPO.OFF
-        }
-        it.roundToInt() == 1 -> {
-            dsp.mpo = JinHaoA4Dsp.MPO.LOW
-        }
-        it.roundToInt() == 2 -> {
-            dsp?.mpo = JinHaoA4Dsp.MPO.MEDIUM
-        }
-        it.roundToInt() == 3 -> {
-            dsp?.mpo = JinHaoA4Dsp.MPO.HIGH
-        }
-    }
-    dsp.let {
-        device?.excute(
-            JinHaoRequest.writeDsp(
-                it,
-                programState.value.roundToInt(),
-                true
-            ), Consumer {
+| Method | Parameters | Return Type | Description |
+|--------|------------|-------------|-------------|
+| `getFrequences()` | None | `int[]` | Returns frequency array |
+| `setEq(int frequency, int eq)` | `frequency`: Hz value, `eq`: gain value | `void` | Sets equalizer gain for specific frequency |
+| `getEq(int frequency)` | `frequency`: Hz value | `int` | Returns equalizer gain for specific frequency |
+| `setNoise(NOISE noise)` | `noise`: noise level enum | `void` | Sets noise reduction level |
+| `getNoise()` | None | `NOISE` | Returns current noise reduction level |
+| `getMinEqValue()` | None | `int` | Returns minimum equalizer gain value (-30) |
+| `getMaxEqValue()` | None | `int` | Returns maximum equalizer gain value (0) |
+| `setDirection(DIRECTION direction)` | `direction`: direction mode enum | `void` | Sets input direction mode with predefined configurations |
+| `getDirection()` | None | `DIRECTION` | Returns current direction mode based on configuration |
 
-            })
-    }
-}
-```
+
+## Array Index Mapping
+
+The 12-element arrays use the following frequency band mapping:
+
+| Index | Frequency (Hz) | FrequencyBand Enum |
+|-------|---------------|-------------------|
+| 0 | 250 | `HZ250` |
+| 1 | 500 | `HZ500` |
+| 2 | 1000 | `HZ1000` |
+| 3 | 1500 | `HZ1500` |
+| 4 | 2000 | `HZ2000` |
+| 5 | 2500 | `HZ2500` |
+| 6 | 3000 | `HZ3000` |
+| 7 | 3500 | `HZ3500` |
+| 8 | 4000 | `HZ4000` |
+| 9 | 5000 | `HZ5000` |
+| 10 | 6000 | `HZ6000` |
+| 11 | 7000 | `HZ7000` |
+
+## Direction Mode Presets
+
+### NORMAL Mode
+- `preGainMic1`: `DB27` (27 dB)
+- `preGainMic2`: `DB12` (12 dB)
+- `equalizerArray[0]`: `DB_MINUS_28` (-28 dB)
+- `equalizerArray[1]`: `DB_MINUS_18` (-18 dB)
+
+### TV Mode
+- `preGainMic1`: `DB27` (27 dB)
+- `preGainMic2`: `DB12` (12 dB)
+- `equalizerArray[0]`: `DB_MINUS_22` (-22 dB)
+- `equalizerArray[1]`: `DB_MINUS_12` (-12 dB)
+
+### MEETING Mode
+- `preGainMic1`: `DB27` (27 dB)
+- `preGainMic2`: `DB24` (24 dB)
+- `equalizerArray[0]`: `DB_MINUS_28` (-28 dB)
+- `equalizerArray[1]`: `DB_MINUS_14` (-14 dB)
+
+### FACE Mode
+- `preGainMic1`: `DB27` (27 dB)
+- `preGainMic2`: `DB27` (27 dB)
+- `equalizerArray[0]`: `DB_MINUS_28` (-28 dB)
+- `equalizerArray[1]`: `DB_MINUS_12` (-12 dB)
+
